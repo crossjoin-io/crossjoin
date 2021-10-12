@@ -2,7 +2,7 @@ FROM golang:1.17 AS build-go
 
 COPY . /src
 
-RUN cd /src/cmd/crossjoin && go build
+RUN cd /src/cmd/crossjoin && go build -x
 
 FROM ubuntu:latest
 
