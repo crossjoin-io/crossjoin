@@ -1,0 +1,45 @@
+name: CLI
+
+on:
+  - push
+
+jobs:
+  test_and_build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+      - name: Build
+        run: go build -v ./...
+      - name: Test
+        run: go test -v ./...
+
+  package_cli:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        GOOS:
+          - linux
+          - darwin
+        GOARCH:
+          - arm64
+          - amd64
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+      - name: Build
+        run: go build -o build/crossjoin ./cmd/crossjoin
+        env:
+          GOOS: ${{ matrix.GOOS }}
+          GOARCH: ${{ matrix.GOARCH }}
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: crossjoin-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+          path: build/crossjoin
