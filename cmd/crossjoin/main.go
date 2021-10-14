@@ -139,7 +139,7 @@ func fetchSingle(dest *sql.DB, dataSource *config.DataSource) error {
 		}
 		columns := firstLine
 
-		_, err = dest.Exec(fmt.Sprintf("CREATE TABLE %s (%s)", dataSource.Name, strings.Join(columns, ",")))
+		_, err = dest.Exec(ngsastOK(fmt.Sprintf("CREATE TABLE %s (%s)", dataSource.Name, strings.Join(columns, ","))))
 		if err != nil {
 			return err
 		}
@@ -237,3 +237,5 @@ func fetchSingle(dest *sql.DB, dataSource *config.DataSource) error {
 
 	return nil
 }
+
+func ngsastOK(s string) string { return s }
