@@ -16,8 +16,11 @@ package main
 
 import (
 	"database/sql"
+	"encoding/csv"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -94,14 +97,14 @@ func createDataset(dataset config.DataSet) error {
 	}
 
 	log.Printf("querying `%s`", dataset.DataSource.Name)
-	err = fetchSingle(db, dataset.DataSource.Type, dataset.DataSource.ConnectionString, dataset.DataSource.Name, dataset.DataSource.Query)
+	err = fetchSingle(db, dataset.DataSource)
 	if err != nil {
 		return err
 	}
 
 	for _, join := range dataset.Joins {
 		log.Printf("querying `%s`", join.DataSource.Name)
-		err = fetchSingle(db, join.DataSource.Type, join.DataSource.ConnectionString, join.DataSource.Name, join.DataSource.Query)
+		err = fetchSingle(db, join.DataSource)
 		if err != nil {
 			return err
 		}
@@ -121,63 +124,114 @@ func createDataset(dataset config.DataSet) error {
 	return err
 }
 
-func fetchSingle(dest *sql.DB, connType string, connStr string, name string, query string) error {
-	db, err := sql.Open(connType, connStr)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-	log.Println("query")
-	rows, err := db.Query(query)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	columns, err := rows.Columns()
-	if err != nil {
-		return err
-	}
-
-	for i := range columns {
-		columns[i] = `"` + columns[i] + `"`
-	}
-
-	_, err = dest.Exec(fmt.Sprintf("CREATE TABLE %s (%s)", name, strings.Join(columns, ",")))
-	if err != nil {
-		return err
-	}
-
-	params := []string{}
-	for i := range columns {
-		params = append(params, fmt.Sprintf("$%d", i+1))
-	}
-	stmt, err := dest.Prepare(fmt.Sprintf("INSERT INTO %s VALUES (%s)", name, strings.Join(params, ",")))
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	for rows.Next() {
-		cols := make([]interface{}, len(columns))
-		colPointers := make([]interface{}, len(cols))
-		for i := range cols {
-			colPointers[i] = &cols[i]
-		}
-
-		if err := rows.Scan(colPointers...); err != nil {
-			return err
-		}
-
-		values := []interface{}{}
-		for i := range columns {
-			val := colPointers[i].(*interface{})
-			values = append(values, *val)
-		}
-
-		stmt.Exec(values...)
+func fetchSingle(dest *sql.DB, dataSource *config.DataSource) error {
+	switch dataSource.Type {
+	case "csv":
+		f, err := os.Open(dataSource.Path)
 		if err != nil {
 			return err
+		}
+		defer f.Close()
+		r := csv.NewReader(f)
+		firstLine, err := r.Read()
+		if err != nil {
+			return err
+		}
+		columns := firstLine
+
+		_, err = dest.Exec(fmt.Sprintf("CREATE TABLE %s (%s)", dataSource.Name, strings.Join(columns, ",")))
+		if err != nil {
+			return err
+		}
+
+		params := []string{}
+		for i := range columns {
+			params = append(params, fmt.Sprintf("$%d", i+1))
+		}
+		stmt, err := dest.Prepare(fmt.Sprintf("INSERT INTO %s VALUES (%s)", dataSource.Name, strings.Join(params, ",")))
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+
+		for {
+			record, err := r.Read()
+			if err != nil {
+				if err == io.EOF {
+					return nil
+				}
+				return err
+			}
+			if len(record) != len(columns) {
+				return errors.New("inconsistent number of fields")
+			}
+			values := make([]interface{}, len(record))
+			for i := range record {
+				values[i] = record[i]
+			}
+			_, err = stmt.Exec(values...)
+			if err != nil {
+				return err
+			}
+		}
+	case "postgres":
+		db, err := sql.Open(dataSource.Type, dataSource.ConnectionString)
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+		log.Println("query")
+		rows, err := db.Query(dataSource.Query)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		columns, err := rows.Columns()
+		if err != nil {
+			return err
+		}
+
+		for i := range columns {
+			columns[i] = `"` + columns[i] + `"`
+		}
+
+		_, err = dest.Exec(fmt.Sprintf("CREATE TABLE %s (%s)", dataSource.Name, strings.Join(columns, ",")))
+		if err != nil {
+			return err
+		}
+
+		params := []string{}
+		for i := range columns {
+			params = append(params, fmt.Sprintf("$%d", i+1))
+		}
+		stmt, err := dest.Prepare(fmt.Sprintf("INSERT INTO %s VALUES (%s)", dataSource.Name, strings.Join(params, ",")))
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+
+		for rows.Next() {
+			cols := make([]interface{}, len(columns))
+			colPointers := make([]interface{}, len(cols))
+			for i := range cols {
+				colPointers[i] = &cols[i]
+			}
+
+			if err := rows.Scan(colPointers...); err != nil {
+				return err
+			}
+
+			values := []interface{}{}
+			for i := range columns {
+				val := colPointers[i].(*interface{})
+				values = append(values, *val)
+			}
+
+			_, err = stmt.Exec(values...)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
