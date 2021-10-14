@@ -45,7 +45,7 @@ jobs:
           curl https://cdn.shiftleft.io/download/sl > ${GITHUB_WORKSPACE}/sl && chmod a+rx ${GITHUB_WORKSPACE}/sl
       - name: Validate Build Rules
         run: ${GITHUB_WORKSPACE}/sl check-analysis --app crossjoin \
-          --branch "${{ github.head_ref || steps.extract_branch.outputs.branch }}" \
+          --target tag.branch="${{ github.head_ref || steps.extract_branch.outputs.branch }}" \
           --report \
           --github-pr-number=${{github.event.number}} \
           --github-pr-user=${{ github.repository_owner }} \
