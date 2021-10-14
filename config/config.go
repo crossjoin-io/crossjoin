@@ -85,18 +85,28 @@ func (c *Config) String() string {
 }
 
 func (c *Config) validate() error {
-	for _, dataset := range c.DataSets {
-		if !validName(dataset.Name) {
-			return fmt.Errorf("invalid name `%s`", dataset.Name)
+	seenDataSetNames := map[string]bool{}
+	for _, dataSet := range c.DataSets {
+		seenDataSourceNames := map[string]bool{}
+		if !validName(dataSet.Name) {
+			return fmt.Errorf("invalid name `%s`", dataSet.Name)
 		}
-		if dataset.DataSource == nil {
+		if seenDataSetNames[dataSet.Name] {
+			return fmt.Errorf("duplicate data set name `%s`", dataSet.Name)
+		}
+		seenDataSetNames[dataSet.Name] = true
+		if dataSet.DataSource == nil {
 			return errors.New("missing data source")
 		}
-		err := dataset.DataSource.validate()
+		err := dataSet.DataSource.validate()
 		if err != nil {
 			return err
 		}
-		for _, j := range dataset.Joins {
+		if dataSet.Name == dataSet.DataSource.Name {
+			return fmt.Errorf("data source can't have the same name as the data set (`%s`)", dataSet.Name)
+		}
+		seenDataSourceNames[dataSet.DataSource.Name] = true
+		for _, j := range dataSet.Joins {
 			if j.DataSource == nil {
 				return errors.New("missing data source for join")
 			}
@@ -104,6 +114,10 @@ func (c *Config) validate() error {
 			if err != nil {
 				return err
 			}
+			if seenDataSourceNames[j.DataSource.Name] {
+				return fmt.Errorf("duplicate data source name `%s`", j.DataSource.Name)
+			}
+			seenDataSetNames[j.DataSource.Name] = true
 		}
 	}
 	return nil
@@ -117,6 +131,10 @@ func (ds *DataSource) validate() error {
 	case "postgres":
 		if ds.Query == "" {
 			return fmt.Errorf("missing query for data source `%s`", ds.Name)
+		}
+	case "csv":
+		if ds.Path == "" {
+			return fmt.Errorf("missing path for data source `%s`", ds.Name)
 		}
 	default:
 		return fmt.Errorf("unknown data source type `%s`", ds.Type)
