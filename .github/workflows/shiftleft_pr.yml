@@ -1,12 +1,9 @@
 ---
 # This workflow integrates ShiftLeft NG SAST with GitHub
 # Visit https://docs.shiftleft.io for help
-name: Security
+name: PR security scan
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
   workflow_dispatch:
 
@@ -46,6 +43,7 @@ jobs:
       - name: Validate Build Rules
         run: |
           ${GITHUB_WORKSPACE}/sl check-analysis --app crossjoin \
+          --config ngsast_build_rules_pr.yml \
           --target tag.branch="${{ github.head_ref || steps.extract_branch.outputs.branch }}" \
           --report \
           --github-pr-number=${{github.event.number}} \
