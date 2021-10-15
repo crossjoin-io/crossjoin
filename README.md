@@ -11,7 +11,9 @@ In the [example](https://github.com/crossjoin-io/crossjoin/tree/main/example) di
 this [AWS blog post](https://aws.amazon.com/blogs/big-data/joining-across-data-sources-on-amazon-quicksight/)) representing
 orders and returns data.
 
-The config creates a combined data set in a `joined.db` SQLite3 file.
+The config defines a data set using both CSVs joined on the `Order ID` field. This example joins two CSVs,
+but you can mix and match data sources. For example, you can join a PostgreSQL data source with a different
+Redshift data source and a CSV.
 
 ```yaml
 data_sets:
