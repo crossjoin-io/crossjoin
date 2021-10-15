@@ -180,7 +180,7 @@ func fetchSingle(dest *sql.DB, dataSource *config.DataSource) error {
 			return err
 		}
 		defer db.Close()
-		log.Println("query")
+
 		rows, err := db.Query(dataSource.Query)
 		if err != nil {
 			return err
