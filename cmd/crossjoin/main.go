@@ -23,6 +23,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/crossjoin-io/crossjoin/config"
@@ -114,13 +115,14 @@ func createDataset(dataset config.DataSet) error {
 	for _, join := range dataset.Joins {
 		joinColumns := []string{}
 		for _, cols := range join.Columns {
-			joinColumns = append(joinColumns, fmt.Sprintf("%s.%s = %s.%s", dataset.DataSource.Name, cols.LeftColumn, join.DataSource.Name, cols.RightColumn))
+			joinColumns = append(joinColumns, fmt.Sprintf(`%s."%s" = %s."%s"`, dataset.DataSource.Name, cols.LeftColumn, join.DataSource.Name, cols.RightColumn))
 		}
 		joinClauses += fmt.Sprintf(" %s %s ON %s", join.Type, join.DataSource.Name, strings.Join(joinColumns, " AND "))
 	}
 
 	log.Println("joining data")
-	_, err = db.Exec(fmt.Sprintf("CREATE TABLE %s AS SELECT * FROM %s %s", dataset.Name, dataset.DataSource.Name, joinClauses))
+	joinQuery := fmt.Sprintf("CREATE TABLE %s AS SELECT * FROM %s %s", dataset.Name, dataset.DataSource.Name, joinClauses)
+	_, err = db.Exec(joinQuery)
 	return err
 }
 
@@ -138,6 +140,9 @@ func fetchSingle(dest *sql.DB, dataSource *config.DataSource) error {
 			return err
 		}
 		columns := firstLine
+		for i := range columns {
+			columns[i] = strconv.Quote(columns[i])
+		}
 
 		_, err = dest.Exec(ngsastOK(fmt.Sprintf("CREATE TABLE %s (%s)", dataSource.Name, strings.Join(columns, ","))))
 		if err != nil {

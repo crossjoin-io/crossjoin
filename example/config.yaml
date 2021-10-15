@@ -1,0 +1,15 @@
+data_sets:
+  - name: joined
+    data_source:
+      name: orders
+      type: csv
+      path: ./orders.csv
+    joins:
+      - type: JOIN
+        columns:
+          - left_column: Order ID
+            right_column: Order ID
+        data_source:
+          name: returns
+          type: csv
+          path: ./returns.csv
