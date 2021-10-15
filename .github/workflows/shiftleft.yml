@@ -46,6 +46,6 @@ jobs:
         run: |
           ${GITHUB_WORKSPACE}/sl check-analysis --app crossjoin \
           --config ngsast_build_rules_main.yml \
-          --target tag.branch="${{ github.head_ref || steps.extract_branch.outputs.branch }}" \
+          --branch "${{ github.head_ref || steps.extract_branch.outputs.branch }}" \
         env:
           SHIFTLEFT_ACCESS_TOKEN: ${{ secrets.SHIFTLEFT_ACCESS_TOKEN }}
