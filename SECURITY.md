@@ -2,7 +2,7 @@
 
 The Go code in this project is statically analyzed for security issues with [ShiftLeft](https://www.shiftleft.io/).
 
-The code analyzed to look for
+The code analyzed to look for vulnerabilities like
 
 - SQL injection
 - Sensitive data leak
