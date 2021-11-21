@@ -1,45 +1,17 @@
-# crossjoin [![Docker](https://github.com/crossjoin-io/crossjoin/actions/workflows/docker.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/actions/workflows/docker.yml) [![CLI](https://github.com/crossjoin-io/crossjoin/actions/workflows/go.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/actions/workflows/go.yml) [![Security scan](https://github.com/crossjoin-io/crossjoin/actions/workflows/shiftleft.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/blob/main/SECURITY.md)
+# Crossjoin
 
-Crossjoin joins together your data from anywhere.
+This is the next version of Crossjoin, which is still a work-in-progress.
 
-- Supports PostgreSQL, Redshift, CSV data sources
-- Zero dependency CLI, or a single Docker container
+## Building
 
-## Example
+**Requirements**
 
-In the [example](https://github.com/crossjoin-io/crossjoin/tree/main/example) directory, there are two CSVs (adapted from
-this [AWS blog post](https://aws.amazon.com/blogs/big-data/joining-across-data-sources-on-amazon-quicksight/)) representing
-orders and returns data.
-
-The config defines a data set using both CSVs joined on the `Order ID` field. This example joins two CSVs,
-but you can mix and match data sources. For example, you can join a PostgreSQL data source with a different
-Redshift data source and a CSV.
-
-```yaml
-data_sets:
-  - name: joined
-    data_source:
-      name: orders
-      type: csv
-      path: ./orders.csv
-    joins:
-      - type: JOIN
-        columns:
-          - left_column: Order ID
-            right_column: Order ID
-        data_source:
-          name: returns
-          type: csv
-          path: ./returns.csv
-```
+- Go
+- Node.js, NPM
 
 ```
-$ crossjoin --config ./config.yaml
-2021/10/14 18:08:06 using config file path config.yaml
-2021/10/14 18:08:06 starting crossjoin
-2021/10/14 18:08:06 creating data set `joined`
-2021/10/14 18:08:06 querying `orders`
-2021/10/14 18:08:06 querying `returns`
-2021/10/14 18:08:06 joining data
-2021/10/14 18:08:06 finished crossjoin
+cd ui && npm install && npm run build && \
+cd .. && go build -o crossjoin
 ```
+
+Everything will be embedded in the `crossjoin` binary.

@@ -1,0 +1,19 @@
+{
+  "name": "crossjoin",
+  "version": "0.2.0",
+  "description": "crossjoin.io UI",
+  "scripts": {
+    "build": "esbuild src/index.js --bundle --outfile=public/js/app.js",
+    "start": "esbuild src/index.js --bundle --outfile=public/js/app.js --watch"
+  },
+  "keywords": [],
+  "repository": "github.com/crossjoin-io/crossjoin",
+  "license": "Apache-2.0",
+  "devDependencies": {},
+  "dependencies": {
+    "htm": "^3.1.0",
+    "preact": "^10.5.15",
+    "preact-router": "^3.2.1",
+    "esbuild": "^0.13.15"
+  }
+}
