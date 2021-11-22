@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -10,16 +11,23 @@ import (
 )
 
 type API struct {
-	//db *sql.DB
+	db     *sql.DB
 	router *mux.Router
 }
 
 // NewAPI returns a new API instance.
-func NewAPI(dataDir string) *API {
+func NewAPI(db *sql.DB) (*API, error) {
 	r := mux.NewRouter()
-	return &API{
-		router: r,
+
+	err := setupDatabase(db)
+	if err != nil {
+		return nil, err
 	}
+
+	return &API{
+		db:     db,
+		router: r,
+	}, nil
 }
 
 func (api *API) Handler() http.Handler {
@@ -30,6 +38,7 @@ func (api *API) Handler() http.Handler {
 	api.handle("GET", "/api/ping", func(r *http.Request) Response {
 		return Response{}
 	})
+	api.handle("GET", "/api/db/schema", api.getDBSchema)
 	return baseMux
 }
 

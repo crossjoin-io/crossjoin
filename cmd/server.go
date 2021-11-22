@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/crossjoin-io/crossjoin/server"
 	"github.com/spf13/cobra"
@@ -33,5 +34,9 @@ var serverCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(serverCmd)
 	serverCmd.Flags().StringVar(&listenAddr, "listen", ":8000", "listen address")
-	serverCmd.Flags().StringVar(&dataDir, "data-dir", "./data", "data directory")
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		homeDir = "."
+	}
+	serverCmd.Flags().StringVar(&dataDir, "data-dir", filepath.Join(homeDir, ".crossjoin"), "data directory")
 }
