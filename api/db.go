@@ -9,6 +9,25 @@ import (
 func setupDatabase(db *sql.DB) error {
 	migrations := []string{
 		/* 000 */ `CREATE TABLE IF NOT EXISTS schema_version (version INT PRIMARY KEY, timestamp TIMESTAMP)`,
+		/* 001 */ `
+		CREATE TABLE IF NOT EXISTS workflows (id TEXT NOT NULL PRIMARY KEY, text TEXT NOT NULL);
+		CREATE TABLE IF NOT EXISTS workflow_runs (id TEXT NOT NULL PRIMARY KEY, workflow_id TEXT NOT NULL, started_at TIMESTAMP, completed_at TIMESTAMP, success BOOL);
+		CREATE TABLE tasks (
+			id TEXT NOT NULL PRIMARY KEY,
+			workflow_run_id TEXT NOT NULL,
+			workflow_task_id TEXT NOT NULL,
+			input JSON NOT NULL DEFAULT '{}',
+			output JSON NOT NULL DEFAULT '{}',
+			created_at TIMESTAMP NOT NULL,
+			started_at TIMESTAMP,
+			timeout_at TIMESTAMP,
+			completed_at TIMESTAMP,
+			attempts_left NOT NULL DEFAULT 3,
+			stdout TEXT,
+			stderr TEXT,
+			success BOOL
+		  );
+		`,
 	}
 
 	tx, err := db.Begin()

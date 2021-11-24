@@ -1,19 +1,5 @@
 package config
 
-// Copyright 2021 Preetam Jinka
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 import (
 	"errors"
 	"fmt"
@@ -25,7 +11,8 @@ import (
 )
 
 type Config struct {
-	DataSets []DataSet `yaml:"data_sets"`
+	DataSets  []DataSet `yaml:"data_sets"`
+	Workflows []Workflow
 }
 
 type DataSet struct {
@@ -59,6 +46,26 @@ type JoinColumns struct {
 	RightColumn string `yaml:"right_column"`
 }
 
+type Workflow struct {
+	ID    string                   `yaml:"id"`
+	Start string                   `yaml:"start"`
+	Tasks map[string]*WorkflowTask `yaml:"tasks"`
+}
+
+func (w *Workflow) Parse(content []byte) error {
+	return yaml.Unmarshal(content, w)
+}
+
+type WorkflowTask struct {
+	Next string `yaml:"next,omitempty"`
+
+	Type   string                 `yaml:"type"`
+	Params map[string]interface{} `yaml:"params"`
+
+	Image  string `yaml:"image,omitempty"` // for "container" type
+	Script string `yaml:"script,omitempty"`
+}
+
 func (c *Config) Parse(content []byte) error {
 	err := yaml.Unmarshal(content, c)
 	if err != nil {
@@ -81,6 +88,11 @@ func (c *Config) Parse(content []byte) error {
 
 func (c *Config) String() string {
 	b, _ := yaml.Marshal(c)
+	return string(b)
+}
+
+func (w Workflow) String() string {
+	b, _ := yaml.Marshal(w)
 	return string(b)
 }
 

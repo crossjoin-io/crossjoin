@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/crossjoin-io/crossjoin/config"
 	"github.com/crossjoin-io/crossjoin/ui/public"
 	"github.com/gorilla/mux"
 )
@@ -16,7 +17,7 @@ type API struct {
 }
 
 // NewAPI returns a new API instance.
-func NewAPI(db *sql.DB) (*API, error) {
+func NewAPI(db *sql.DB, conf *config.Config) (*API, error) {
 	r := mux.NewRouter()
 
 	err := setupDatabase(db)
@@ -24,10 +25,20 @@ func NewAPI(db *sql.DB) (*API, error) {
 		return nil, err
 	}
 
-	return &API{
+	api := &API{
 		db:     db,
 		router: r,
-	}, nil
+	}
+
+	// Load the initial config
+	for _, workflow := range conf.Workflows {
+		err = api.StoreWorkflow(workflow)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return api, nil
 }
 
 func (api *API) Handler() http.Handler {
@@ -39,6 +50,9 @@ func (api *API) Handler() http.Handler {
 		return Response{}
 	})
 	api.handle("GET", "/api/db/schema", api.getDBSchema)
+	api.handle("GET", "/api/tasks/poll", api.getTasksPoll)
+	api.handle("POST", "/api/tasks/result", api.postTasksResult)
+	api.handle("POST", "/api/workflows/{workflow_id}/start", api.postWorkflowsStart)
 	return baseMux
 }
 
