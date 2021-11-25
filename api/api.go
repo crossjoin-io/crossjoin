@@ -45,7 +45,7 @@ func NewAPI(db *sql.DB, conf *config.Config) (*API, error) {
 func (api *API) Handler() http.Handler {
 	baseMux := http.NewServeMux()
 	baseMux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/app/") {
+		if strings.HasPrefix(r.URL.Path, "/app") {
 			r.URL.Path = "/"
 		}
 		http.FileServer(http.FS(public.Content)).ServeHTTP(w, r)
