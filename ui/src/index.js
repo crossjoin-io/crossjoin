@@ -1,44 +1,156 @@
-import { render, Component } from "preact";
+import { render } from "preact";
+import { useState, useEffect } from "preact/hooks";
+import { Router, route } from "preact-router";
 import { html } from "htm/preact";
 
-class App extends Component {
-  constructor() {
-    super();
+function Home() {
+  return html` <p>Home</p>
+    <a href="/app/workflows">Workflows</a>`;
+}
 
-    this.state = { loading: true, error: null, apiOK: false };
-  }
+function Workflows() {
+  const [workflows, setWorkflows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState();
 
-  componentWillMount() {
-    let setState = this.setState.bind(this);
-    fetch("/api/ping")
+  useEffect(() => {
+    fetch("/api/workflows")
       .then((response) => {
         if (response.ok) {
           return response.json();
         }
       })
       .then((data) => {
-        setState({
-          loading: false,
-          apiOK: data.ok,
-        });
+        setLoading(false);
+        setWorkflows(data.response);
       })
       .catch((e) => {
-        setState({
-          loading: false,
-          error: e.toString(),
-        });
+        setLoading(false);
+        setError(e.toString());
       });
+  }, []);
+
+  if (loading) {
+    return html`Loading...`;
+  }
+  if (error) {
+    return html`Error: ${error}`;
   }
 
-  render() {
-    if (this.state.loading) {
-      return html`Loading...`;
-    }
-    if (this.state.error) {
-      return html`API error: ${this.state.error}`;
-    }
-    return html`<p>API OK.</p>`;
+  console.log(workflows);
+
+  let workflowElems = [];
+  for (id in workflows) {
+    workflowElems.push(
+      html`<div>
+        ${workflows[id].ID} - <a href="/app/workflows/${id}/runs">Runs</a>
+        <div>${JSON.stringify(workflows[id])}</div>
+      </div>`
+    );
   }
+  return html`<div>${workflowElems}</div>`;
+}
+
+function WorkflowRuns(props) {
+  const [workflowRuns, setWorkflowRuns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState();
+
+  useEffect(() => {
+    fetch(`/api/workflows/${props.workflowID}/runs`)
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        }
+      })
+      .then((data) => {
+        setLoading(false);
+        setWorkflowRuns(data.response);
+      })
+      .catch((e) => {
+        setLoading(false);
+        setError(e.toString());
+      });
+  }, []);
+
+  if (loading) {
+    return html`Loading...`;
+  }
+  if (error) {
+    return html`Error: ${error}`;
+  }
+
+  console.log(workflowRuns);
+
+  let runs = [];
+  for (i in workflowRuns) {
+    const run = workflowRuns[i];
+    runs.push(
+      html`<div>
+        <span>${run.id} - </span>
+        <a href="/app/workflows/${run.workflow_id}/runs/${run.id}/tasks"
+          >Tasks</a
+        >
+      </div>`
+    );
+  }
+  return html`<div>${runs}</div>`;
+}
+
+function WorkflowRunTasks(props) {
+  const [workflowTasks, setWorkflowTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState();
+
+  useEffect(() => {
+    fetch(
+      `/api/workflows/${props.workflowID}/runs/${props.workflowRunID}/tasks`
+    )
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        }
+      })
+      .then((data) => {
+        setLoading(false);
+        setWorkflowTasks(data.response);
+      })
+      .catch((e) => {
+        setLoading(false);
+        setError(e.toString());
+      });
+  }, []);
+
+  if (loading) {
+    return html`Loading...`;
+  }
+  if (error) {
+    return html`Error: ${error}`;
+  }
+
+  let tasks = [];
+  for (i in workflowTasks) {
+    const task = workflowTasks[i];
+    console.log(task);
+    tasks.push(
+      html`<div>
+        ${task.id} - ${task.workflow_task_id} - ${JSON.stringify(task.input)} -
+        ${JSON.stringify(task.output)}
+      </div>`
+    );
+  }
+  return html`<div>${tasks}</div>`;
+}
+
+function App() {
+  return html`
+  <${Router}>
+    <${Home} path="/app/" />
+    <${Workflows} path="/app/workflows" />
+    <${WorkflowRuns} path="/app/workflows/:workflowID/runs" />
+    <${WorkflowRunTasks} path="/app/workflows/:workflowID/runs/:workflowRunID/tasks" />
+  </${Router}>
+  `;
 }
 
 render(html`<${App} />`, document.getElementById("app"));

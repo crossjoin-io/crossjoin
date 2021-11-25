@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/crossjoin-io/crossjoin/config"
 	"github.com/crossjoin-io/crossjoin/ui/public"
@@ -43,7 +44,12 @@ func NewAPI(db *sql.DB, conf *config.Config) (*API, error) {
 
 func (api *API) Handler() http.Handler {
 	baseMux := http.NewServeMux()
-	baseMux.Handle("/", http.FileServer(http.FS(public.Content)))
+	baseMux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/app/") {
+			r.URL.Path = "/"
+		}
+		http.FileServer(http.FS(public.Content)).ServeHTTP(w, r)
+	}))
 	baseMux.Handle("/ui.go", http.NotFoundHandler())
 	baseMux.Handle("/api/", api.router)
 	api.handle("GET", "/api/ping", func(r *http.Request) Response {
