@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
@@ -27,13 +28,14 @@ func (api *API) getTasksPoll(r *http.Request) Response {
 	var t Task
 	workflowRunID := ""
 	workflowTaskID := ""
+	var taskInput []byte
 	log.Println("querying for a task")
 	err = api.db.QueryRow("select id, workflow_run_id, workflow_task_id, input from tasks where "+
 		"completed_at is null and "+
 		"attempts_left > 0 and "+
 		"(started_at is null OR timeout_at < datetime('now')) "+
 		"limit 1").
-		Scan(&t.ID, &workflowRunID, &workflowTaskID, &t.Input)
+		Scan(&t.ID, &workflowRunID, &workflowTaskID, &taskInput)
 	if err == sql.ErrNoRows {
 		log.Println("no tasks; returning")
 		_ = tx.Commit()
@@ -42,6 +44,15 @@ func (api *API) getTasksPoll(r *http.Request) Response {
 			OK: true,
 		}
 	}
+	if err != nil {
+		log.Println(err)
+		_ = tx.Commit()
+		return Response{
+			OK:    false,
+			Error: err.Error(),
+		}
+	}
+	err = json.Unmarshal(taskInput, &t.Input)
 	if err != nil {
 		log.Println(err)
 		_ = tx.Commit()
@@ -73,6 +84,7 @@ func (api *API) getTasksPoll(r *http.Request) Response {
 	task := workflow.Tasks[workflowTaskID]
 	t.Image = task.Image
 	t.Script = task.Script
+	t.Env = task.Env
 
 	log.Println("marking task as started")
 	_, err = tx.Exec("update tasks set started_at = datetime('now'), "+

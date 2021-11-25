@@ -59,8 +59,9 @@ func (w *Workflow) Parse(content []byte) error {
 type WorkflowTask struct {
 	Next string `yaml:"next,omitempty"`
 
-	Type   string                 `yaml:"type"`
-	Params map[string]interface{} `yaml:"params"`
+	Type string                 `yaml:"type"`
+	Env  map[string]string      `yaml:"env"`
+	With map[string]interface{} `yaml:"params"`
 
 	Image  string `yaml:"image,omitempty"` // for "container" type
 	Script string `yaml:"script,omitempty"`

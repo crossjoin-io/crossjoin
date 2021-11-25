@@ -1,18 +1,33 @@
 workflows:
   - id: my-workflow
-    start: send_slack_message
+    start: say_hi
     tasks:
-      send_slack_message:
+      say_hi:
         type: container
-        next: wait_for_1_day
+        next: say_next
         image: alpine
-        params:
-          foo: bar
+        with:
+          baz: baz
         script: |
           #!/bin/sh
           apk add jq
           echo hi
-      wait_for_1_day:
-        type: delay
-        params:
-          duration: 1d
+          mv /runner/in.json /runner/out.json
+      say_next:
+        type: container
+        next: say_bye
+        image: alpine
+        script: |
+          #!/bin/sh
+          echo next
+          mv /runner/in.json /runner/out.json
+      say_bye:
+        type: container
+        image: ubuntu
+        env:
+          foo: bar
+        script: |
+          #!/bin/sh
+          echo bye
+          mv /runner/in.json /runner/out.json
+          env

@@ -29,35 +29,30 @@ func NewRunner(apiURL string) (*Runner, error) {
 }
 
 func (run *Runner) Start() error {
-	errors := make(chan error)
-	for i := 0; i < 4; i++ {
-		go func() {
-			for {
-				task, err := run.pollForTask()
-				if err != nil {
-					log.Fatal(err)
-				}
-				if task == nil {
-					time.Sleep(5 * time.Second)
-					continue
-				}
-				start := time.Now()
-				result, err := runTaskContainer(task)
-				if err != nil {
-					errors <- err
-				}
-				log.Println("got result", result)
-				log.Println("dur", time.Since(start))
+	for {
+		task, err := run.pollForTask()
+		if err != nil {
+			log.Fatal(err)
+		}
+		if task == nil {
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		start := time.Now()
+		result, err := runTaskContainer(task)
+		if err != nil {
+			return err
+		}
+		log.Println("dur", time.Since(start))
 
-				body := &bytes.Buffer{}
-				json.NewEncoder(body).Encode(result)
+		body := &bytes.Buffer{}
+		err = json.NewEncoder(body).Encode(result)
+		if err != nil {
+			return err
+		}
 
-				http.Post(run.apiURL+"/api/tasks/result", "application/json", body)
-			}
-		}()
+		http.Post(run.apiURL+"/api/tasks/result", "application/json", body)
 	}
-	err := <-errors
-	return err
 }
 
 func (run *Runner) pollForTask() (*api.Task, error) {
@@ -114,6 +109,9 @@ func runTaskContainer(t *api.Task) (*api.TaskResult, error) {
 			return nil, err
 		}
 	}
+	for k, v := range t.Env {
+		args = append(args, "-e", fmt.Sprintf("%s=%s", k, v))
+	}
 	args = append(args, t.Image)
 	fmt.Println(args)
 	cmd := exec.Command("docker", args...)
@@ -135,11 +133,15 @@ func runTaskContainer(t *api.Task) (*api.TaskResult, error) {
 	if stderr.Len() > 512 {
 		stderr.Truncate(512)
 	}
-	var output interface{}
+	var output map[string]interface{}
 	outputFile, err := os.Open(filepath.Join(dir, "out.json"))
 	if err == nil {
 		defer outputFile.Close()
-		json.NewDecoder(outputFile).Decode(&output)
+		err = json.NewDecoder(outputFile).Decode(&output)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println("got task output", output)
 	}
 	return &api.TaskResult{
 		ID:     t.ID,

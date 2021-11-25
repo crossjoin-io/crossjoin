@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -10,7 +11,10 @@ import (
 func (api *API) postWorkflowsStart(r *http.Request) Response {
 	vars := mux.Vars(r)
 	workflowID := vars["workflow_id"]
-	err := api.StartWorkflow(workflowID)
+
+	var workflowInput map[string]interface{}
+	json.NewDecoder(r.Body).Decode(&workflowInput)
+	err := api.StartWorkflow(workflowID, workflowInput)
 	if err != nil {
 		log.Println(err)
 		return Response{

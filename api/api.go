@@ -52,6 +52,10 @@ func (api *API) Handler() http.Handler {
 	api.handle("GET", "/api/db/schema", api.getDBSchema)
 	api.handle("GET", "/api/tasks/poll", api.getTasksPoll)
 	api.handle("POST", "/api/tasks/result", api.postTasksResult)
+
+	api.handle("GET", "/api/workflows", api.getWorkflows)
+	api.handle("GET", "/api/workflows/{workflow_id}/runs", api.getWorkflowRuns)
+	api.handle("GET", "/api/workflows/{workflow_id}/runs/{workflow_run_id}/tasks", api.getWorkflowRunTasks)
 	api.handle("POST", "/api/workflows/{workflow_id}/start", api.postWorkflowsStart)
 	return baseMux
 }
@@ -66,6 +70,7 @@ func (api *API) handle(method, route string, handler func(r *http.Request) Respo
 		if resp.Status > 0 {
 			w.WriteHeader(resp.Status)
 		}
+		w.Header().Add("content-type", "application/json")
 		enc := json.NewEncoder(w)
 		enc.Encode(resp)
 	})
