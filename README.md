@@ -27,5 +27,5 @@ Everything will be embedded in the `crossjoin` binary.
 Running:
 
 - In the `ui` directory, run `npm start`
-- In the parent directory, run `find * | entr -r go run main.go server`
+- In the parent directory, run `find . -path './ui/node_modules' -prune -o -name '*.js' -o -name '*.go' | entr -r go run main.go server`
   - If you don't have entr, run `go run main.go server`
