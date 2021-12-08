@@ -1,2 +1,2 @@
 methods:
-  - pattern: ngsastOK
+  - pattern: .*
