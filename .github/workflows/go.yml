@@ -45,11 +45,17 @@ jobs:
           node-version: "17"
           cache: "npm"
           cache-dependency-path: ui/package-lock.json
+      - uses: egor-tensin/setup-gcc@v1
+        with:
+          version: latest
+          platform: x64
       - run: cd ui && npm install
       - run: cd ui && npm run build
       - name: Build
         run: go build -o build/crossjoin .
         env:
+          CGO_ENABLED: "1"
+          CC_FOR_TARGET: gcc
           GOOS: ${{ matrix.GOOS }}
           GOARCH: ${{ matrix.GOARCH }}
       - name: Archive artifacts
