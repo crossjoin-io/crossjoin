@@ -1,3 +1,10 @@
+data_connections:
+  - name: orders
+    type: csv
+    path: ./example/orders.csv
+  - name: returns
+    type: csv
+    path: ./example/returns.csv
 workflows:
   - id: my-workflow
     start: say_hi

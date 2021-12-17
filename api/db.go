@@ -26,7 +26,13 @@ func setupDatabase(db *sql.DB) error {
 			stdout TEXT,
 			stderr TEXT,
 			success BOOL
-		  );
+		);
+		CREATE TABLE IF NOT EXISTS data_connections (
+			name TEXT NOT NULL PRIMARY KEY,
+			type TEXT NOT NULL,
+			path TEXT,
+			connection_string TEXT
+		);
 		`,
 	}
 

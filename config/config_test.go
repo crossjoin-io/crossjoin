@@ -22,7 +22,7 @@ workflows:
       wait_for_1_day:
         type: delay
         params:
-          duration: 1d`))
+          duration: 1d`), "")
 	if err != nil {
 		t.Fatal(err)
 	}

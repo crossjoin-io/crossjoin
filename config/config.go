@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -11,27 +12,33 @@ import (
 )
 
 type Config struct {
-	DataSets  []DataSet `yaml:"data_sets"`
-	Workflows []Workflow
+	Datasets        []Dataset        `yaml:"datasets"`
+	DataConnections []DataConnection `yaml:"data_connections"`
+	Workflows       []Workflow       `yaml:"workflows"`
 }
 
-type DataSet struct {
+type Dataset struct {
 	Name       string      `yaml:"name"`
 	DataSource *DataSource `yaml:"data_source"`
 	Joins      []Join      `yaml:"joins"`
 }
 
-type DataSource struct {
+type DataConnection struct {
 	Name             string `yaml:"name"`
 	Type             string `yaml:"type"`
 	Path             string `yaml:"path"`
 	ConnectionString string `yaml:"connection_string"`
-	Query            string `yaml:"query"`
 }
 
-func (ds *DataSource) expandConnectionString() {
-	if strings.HasPrefix(ds.ConnectionString, "$") {
-		ds.ConnectionString = os.ExpandEnv(ds.ConnectionString)
+type DataSource struct {
+	Name           string `yaml:"name"`
+	DataConnection string `yaml:"data_connection"`
+	Query          string `yaml:"query"`
+}
+
+func (dc *DataConnection) expandConnectionString() {
+	if strings.HasPrefix(dc.ConnectionString, "$") {
+		dc.ConnectionString = os.ExpandEnv(dc.ConnectionString)
 	}
 }
 
@@ -67,19 +74,17 @@ type WorkflowTask struct {
 	Script string `yaml:"script,omitempty"`
 }
 
-func (c *Config) Parse(content []byte) error {
+func (c *Config) Parse(content []byte, dir string) error {
 	err := yaml.Unmarshal(content, c)
 	if err != nil {
 		return err
 	}
 
-	for _, dataset := range c.DataSets {
-		if dataset.DataSource != nil {
-			dataset.DataSource.expandConnectionString()
-		}
-		for _, j := range dataset.Joins {
-			if j.DataSource != nil {
-				j.DataSource.expandConnectionString()
+	for i, dataConnection := range c.DataConnections {
+		dataConnection.expandConnectionString()
+		if dataConnection.Path != "" {
+			if !filepath.IsAbs(dataConnection.Path) {
+				c.DataConnections[i].Path = filepath.Join(dir, dataConnection.Path)
 			}
 		}
 	}
@@ -98,32 +103,47 @@ func (w Workflow) String() string {
 }
 
 func (c *Config) validate() error {
-	seenDataSetNames := map[string]bool{}
-	for _, dataSet := range c.DataSets {
-		seenDataSourceNames := map[string]bool{}
-		if !validName(dataSet.Name) {
-			return fmt.Errorf("invalid name `%s`", dataSet.Name)
-		}
-		if seenDataSetNames[dataSet.Name] {
-			return fmt.Errorf("duplicate data set name `%s`", dataSet.Name)
-		}
-		seenDataSetNames[dataSet.Name] = true
-		if dataSet.DataSource == nil {
-			return errors.New("missing data source")
-		}
-		err := dataSet.DataSource.validate()
+
+	dataConnectionTypes := map[string]string{}
+	seenDataConnectionNames := map[string]bool{}
+	for _, dataConnection := range c.DataConnections {
+		err := dataConnection.validate()
 		if err != nil {
 			return err
 		}
-		if dataSet.Name == dataSet.DataSource.Name {
-			return fmt.Errorf("data source can't have the same name as the data set (`%s`)", dataSet.Name)
+		if seenDataConnectionNames[dataConnection.Name] {
+			return fmt.Errorf("duplicate data connection name `%s`", dataConnection.Name)
 		}
-		seenDataSourceNames[dataSet.DataSource.Name] = true
-		for _, j := range dataSet.Joins {
+		seenDataConnectionNames[dataConnection.Name] = true
+		dataConnectionTypes[dataConnection.Name] = dataConnection.Type
+	}
+
+	seenDataSetNames := map[string]bool{}
+	for _, dataset := range c.Datasets {
+		seenDataSourceNames := map[string]bool{}
+		if !validName(dataset.Name) {
+			return fmt.Errorf("invalid name `%s`", dataset.Name)
+		}
+		if seenDataSetNames[dataset.Name] {
+			return fmt.Errorf("duplicate dataset name `%s`", dataset.Name)
+		}
+		seenDataSetNames[dataset.Name] = true
+		if dataset.DataSource == nil {
+			return errors.New("missing data source")
+		}
+		err := dataset.DataSource.validate(dataConnectionTypes[dataset.DataSource.DataConnection])
+		if err != nil {
+			return err
+		}
+		if dataset.Name == dataset.DataSource.Name {
+			return fmt.Errorf("data source can't have the same name as the dataset (`%s`)", dataset.Name)
+		}
+		seenDataSourceNames[dataset.DataSource.Name] = true
+		for _, j := range dataset.Joins {
 			if j.DataSource == nil {
 				return errors.New("missing data source for join")
 			}
-			err := j.DataSource.validate()
+			err := j.DataSource.validate(dataConnectionTypes[j.DataSource.DataConnection])
 			if err != nil {
 				return err
 			}
@@ -136,21 +156,34 @@ func (c *Config) validate() error {
 	return nil
 }
 
-func (ds *DataSource) validate() error {
+func (dc *DataConnection) validate() error {
+	if !validName(dc.Name) {
+		return fmt.Errorf("invalid name `%s`", dc.Name)
+	}
+	switch dc.Type {
+	case "postgres":
+		if dc.ConnectionString == "" {
+			return fmt.Errorf("missing connection string for data connection `%s`", dc.Name)
+		}
+	case "csv":
+		if dc.Path == "" {
+			return fmt.Errorf("missing path for data connection `%s`", dc.Name)
+		}
+	default:
+		return fmt.Errorf("unknown data connection type `%s`", dc.Type)
+	}
+	return nil
+}
+
+func (ds *DataSource) validate(dataConnectionType string) error {
 	if !validName(ds.Name) {
 		return fmt.Errorf("invalid name `%s`", ds.Name)
 	}
-	switch ds.Type {
+	switch dataConnectionType {
 	case "postgres":
 		if ds.Query == "" {
-			return fmt.Errorf("missing query for data source `%s`", ds.Name)
+			return fmt.Errorf("missing query")
 		}
-	case "csv":
-		if ds.Path == "" {
-			return fmt.Errorf("missing path for data source `%s`", ds.Name)
-		}
-	default:
-		return fmt.Errorf("unknown data source type `%s`", ds.Type)
 	}
 	return nil
 }

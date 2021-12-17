@@ -49,7 +49,11 @@ func NewServer(listenAddress, dataDir, configFile string, runner bool) (*Server,
 		if err != nil {
 			return nil, err
 		}
-		err = conf.Parse(configFileContent)
+		absPath, err := filepath.Abs(configFile)
+		if err != nil {
+			return nil, err
+		}
+		err = conf.Parse(configFileContent, filepath.Dir(absPath))
 		if err != nil {
 			return nil, err
 		}

@@ -38,6 +38,12 @@ func NewAPI(db *sql.DB, conf *config.Config) (*API, error) {
 			return nil, err
 		}
 	}
+	for _, connection := range conf.DataConnections {
+		err = api.StoreDataConnection(connection)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return api, nil
 }
@@ -59,6 +65,7 @@ func (api *API) Handler() http.Handler {
 	api.handle("GET", "/api/tasks/poll", api.getTasksPoll)
 	api.handle("POST", "/api/tasks/result", api.postTasksResult)
 
+	api.handle("GET", "/api/data_connections", api.getDataConnections)
 	api.handle("GET", "/api/workflows", api.getWorkflows)
 	api.handle("GET", "/api/workflows/{workflow_id}/runs", api.getWorkflowRuns)
 	api.handle("GET", "/api/workflows/{workflow_id}/runs/{workflow_run_id}/tasks", api.getWorkflowRunTasks)
