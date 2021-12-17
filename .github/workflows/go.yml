@@ -28,10 +28,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        GOARCH:
-          - amd64
+        include:
+          - os: ubuntu-latest
+            GOARCH: amd64
+          - os: ubuntu-latest
+            GOARCH: arm64
+            CC: aarch64-linux-gnu-gcc
+          - os: macos-latest
+            GOARCH: amd64
     steps:
+      - run: apt install aarch64-linux-gnu-gcc
+        if: ${{ matrix.os == 'ubuntu-latest' }}
       - uses: actions/checkout@v2
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -49,6 +56,7 @@ jobs:
         env:
           CGO_ENABLED: "1"
           GOARCH: ${{ matrix.GOARCH }}
+          CC: ${{ matrix.CC }}
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
         with:
