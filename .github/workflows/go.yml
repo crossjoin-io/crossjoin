@@ -30,7 +30,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         GOARCH:
-          - arm64
           - amd64
     steps:
       - uses: actions/checkout@v2
