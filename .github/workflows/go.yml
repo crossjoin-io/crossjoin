@@ -37,7 +37,7 @@ jobs:
           - os: macos-latest
             GOARCH: amd64
     steps:
-      - run: apt install aarch64-linux-gnu-gcc
+      - run: sudo apt update && sudo apt install aarch64-linux-gnu-gcc
         if: ${{ matrix.os == 'ubuntu-latest' }}
       - uses: actions/checkout@v2
       - name: Set up Go
