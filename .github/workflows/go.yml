@@ -25,12 +25,10 @@ jobs:
         run: go test -v ./...
 
   package_cli:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        GOOS:
-          - linux
-          - darwin
+        os: [ubuntu-latest, macos-latest]
         GOARCH:
           - arm64
           - amd64
@@ -45,20 +43,15 @@ jobs:
           node-version: "17"
           cache: "npm"
           cache-dependency-path: ui/package-lock.json
-      - uses: egor-tensin/setup-clang@v1
-        with:
-          version: latest
-          platform: x64
       - run: cd ui && npm install
       - run: cd ui && npm run build
       - name: Build
         run: go build -o build/crossjoin .
         env:
           CGO_ENABLED: "1"
-          GOOS: ${{ matrix.GOOS }}
           GOARCH: ${{ matrix.GOARCH }}
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: crossjoin-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+          name: crossjoin-${{ matrix.os }}-${{ matrix.GOARCH }}
           path: build/crossjoin
