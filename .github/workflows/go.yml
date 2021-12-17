@@ -36,6 +36,8 @@ jobs:
             CC: aarch64-linux-gnu-gcc
           - os: macos-latest
             GOARCH: amd64
+          - os: macos-latest
+            GOARCH: arm64
     steps:
       - run: sudo apt update && sudo apt install gcc-aarch64-linux-gnu
         if: ${{ matrix.os == 'ubuntu-latest' }}
