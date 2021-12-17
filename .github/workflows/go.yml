@@ -40,7 +40,7 @@ jobs:
             GOARCH: arm64
     steps:
       - run: sudo apt update && sudo apt install gcc-aarch64-linux-gnu
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.GOARCH == 'arm64' }}
       - uses: actions/checkout@v2
       - name: Set up Go
         uses: actions/setup-go@v2
