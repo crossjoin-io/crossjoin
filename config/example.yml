@@ -1,10 +1,23 @@
 data_connections:
   - name: orders
     type: csv
-    path: ./example/orders.csv
+    path: ../example/orders.csv
   - name: returns
     type: csv
-    path: ./example/returns.csv
+    path: ../example/returns.csv
+datasets:
+  - name: orders_and_returns
+    data_source:
+      name: orders
+      data_connection: orders
+    joins:
+      - type: JOIN
+        columns:
+          - left_column: Order ID
+            right_column: Order ID
+        data_source:
+          name: returns
+          data_connection: returns
 workflows:
   - id: my-workflow
     start: say_hi

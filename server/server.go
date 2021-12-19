@@ -59,7 +59,7 @@ func NewServer(listenAddress, dataDir, configFile string, runner bool) (*Server,
 		}
 	}
 
-	api, err := api.NewAPI(db, conf)
+	api, err := api.NewAPI(db, conf, dataDir)
 	if err != nil {
 		return nil, err
 	}

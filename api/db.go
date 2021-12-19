@@ -33,6 +33,10 @@ func setupDatabase(db *sql.DB) error {
 			path TEXT,
 			connection_string TEXT
 		);
+		CREATE TABLE IF NOT EXISTS datasets (
+			name TEXT NOT NULL PRIMARY KEY,
+			text TEXT NOT NULL
+		)
 		`,
 	}
 

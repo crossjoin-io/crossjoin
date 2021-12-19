@@ -37,6 +37,7 @@ a {
 }
 .cj-content {
   padding: 0 1em;
+  overflow-x: scroll;
 }
 .cj-breadcrumb {
   margin: 1em 0;

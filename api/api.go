@@ -13,12 +13,13 @@ import (
 )
 
 type API struct {
-	db     *sql.DB
-	router *mux.Router
+	db      *sql.DB
+	router  *mux.Router
+	dataDir string
 }
 
 // NewAPI returns a new API instance.
-func NewAPI(db *sql.DB, conf *config.Config) (*API, error) {
+func NewAPI(db *sql.DB, conf *config.Config, dataDir string) (*API, error) {
 	r := mux.NewRouter()
 
 	err := setupDatabase(db)
@@ -27,8 +28,9 @@ func NewAPI(db *sql.DB, conf *config.Config) (*API, error) {
 	}
 
 	api := &API{
-		db:     db,
-		router: r,
+		db:      db,
+		router:  r,
+		dataDir: dataDir,
 	}
 
 	// Load the initial config
@@ -40,6 +42,12 @@ func NewAPI(db *sql.DB, conf *config.Config) (*API, error) {
 	}
 	for _, connection := range conf.DataConnections {
 		err = api.StoreDataConnection(connection)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for _, dataset := range conf.Datasets {
+		err = api.StoreDataset(dataset)
 		if err != nil {
 			return nil, err
 		}
@@ -66,6 +74,8 @@ func (api *API) Handler() http.Handler {
 	api.handle("POST", "/api/tasks/result", api.postTasksResult)
 
 	api.handle("GET", "/api/data_connections", api.getDataConnections)
+	api.handle("GET", "/api/datasets", api.getDatasets)
+	api.handle("GET", "/api/datasets/{dataset_name}/preview", api.getDatasetPreview)
 	api.handle("GET", "/api/workflows", api.getWorkflows)
 	api.handle("GET", "/api/workflows/{workflow_id}/runs", api.getWorkflowRuns)
 	api.handle("GET", "/api/workflows/{workflow_id}/runs/{workflow_run_id}/tasks", api.getWorkflowRunTasks)
