@@ -20,5 +20,6 @@ func (api *API) ReadDataConnection(id string) (*config.DataConnection, error) {
 	if err != nil {
 		return nil, err
 	}
+	conn.ExpandConnectionString()
 	return conn, nil
 }

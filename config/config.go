@@ -41,7 +41,7 @@ type DataSource struct {
 	Query          string `yaml:"query" json:"query"`
 }
 
-func (dc *DataConnection) expandConnectionString() {
+func (dc *DataConnection) ExpandConnectionString() {
 	if strings.HasPrefix(dc.ConnectionString, "$") {
 		dc.ConnectionString = os.ExpandEnv(dc.ConnectionString)
 	}
@@ -92,7 +92,7 @@ func (c *Config) Parse(content []byte, dir string) error {
 	}
 
 	for i, dataConnection := range c.DataConnections {
-		dataConnection.expandConnectionString()
+		dataConnection.ExpandConnectionString()
 		if dataConnection.Path != "" {
 			if !filepath.IsAbs(dataConnection.Path) {
 				c.DataConnections[i].Path = filepath.Join(dir, dataConnection.Path)
