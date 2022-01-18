@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/crossjoin-io/crossjoin/config"
+	_ "github.com/lib/pq"
 	"gopkg.in/yaml.v2"
 )
 

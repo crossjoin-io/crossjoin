@@ -13,6 +13,8 @@ RUN cd /src/ && go build -x -ldflags "-linkmode external -extldflags -static"
 
 FROM alpine:3
 
+RUN apk add docker
+
 COPY --from=build-go /src/crossjoin /bin/crossjoin
 
 WORKDIR /crossjoin
