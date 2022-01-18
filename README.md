@@ -1,45 +1,43 @@
-# crossjoin [![Docker](https://github.com/crossjoin-io/crossjoin/actions/workflows/docker.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/actions/workflows/docker.yml) [![CLI](https://github.com/crossjoin-io/crossjoin/actions/workflows/go.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/actions/workflows/go.yml) [![Security scan](https://github.com/crossjoin-io/crossjoin/actions/workflows/shiftleft.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/blob/main/SECURITY.md)
+# Crossjoin [![Docker](https://github.com/crossjoin-io/crossjoin/actions/workflows/docker.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/actions/workflows/docker.yml) [![CLI](https://github.com/crossjoin-io/crossjoin/actions/workflows/go.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/actions/workflows/go.yml) [![Security scan](https://github.com/crossjoin-io/crossjoin/actions/workflows/shiftleft.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/blob/main/SECURITY.md)
 
-Crossjoin joins together your data from anywhere.
+Crossjoin is a service to run data-driven workflows.
+It joins together data from various data sources and triggers Docker-based workflows.
+Workflows are defined as YAML (like GitHub Actions) and are executed by runners.
+You can run everything in a single Crossjoin instance, or have 1 server and multiple
+runners.
 
-- Supports PostgreSQL, Redshift, CSV data sources
-- Zero dependency CLI, or a single Docker container
+## Status
 
-## Example
+Crossjoin is under active development. Let @Preetam know if you're interested in using it!
 
-In the [example](https://github.com/crossjoin-io/crossjoin/tree/main/example) directory, there are two CSVs (adapted from
-this [AWS blog post](https://aws.amazon.com/blogs/big-data/joining-across-data-sources-on-amazon-quicksight/)) representing
-orders and returns data.
+## License
 
-The config defines a data set using both CSVs joined on the `Order ID` field. This example joins two CSVs,
-but you can mix and match data sources. For example, you can join a PostgreSQL data source with a different
-Redshift data source and a CSV.
+Apache 2.0
 
-```yaml
-data_sets:
-  - name: joined
-    data_source:
-      name: orders
-      type: csv
-      path: ./orders.csv
-    joins:
-      - type: JOIN
-        columns:
-          - left_column: Order ID
-            right_column: Order ID
-        data_source:
-          name: returns
-          type: csv
-          path: ./returns.csv
-```
+## Building
+
+**Requirements**
+
+- Go
+- Node.js, NPM
 
 ```
-$ crossjoin --config ./config.yaml
-2021/10/14 18:08:06 using config file path config.yaml
-2021/10/14 18:08:06 starting crossjoin
-2021/10/14 18:08:06 creating data set `joined`
-2021/10/14 18:08:06 querying `orders`
-2021/10/14 18:08:06 querying `returns`
-2021/10/14 18:08:06 joining data
-2021/10/14 18:08:06 finished crossjoin
+cd ui && npm install && npm run build && \
+cd .. && go build -o crossjoin
 ```
+
+Everything will be embedded in the `crossjoin` binary.
+
+## Development
+
+**Requirements**
+
+- Go
+- Node.js, NPM
+- [entr(1)](https://eradman.com/entrproject/) is useful, but not required
+
+Running:
+
+- In the `ui` directory, run `npm start`
+- In the parent directory, run `find . -path './ui/node_modules' -prune -o -name '*.js' -o -name '*.go' | entr -r go run main.go server --runner --config config/example.yml`
+  - If you don't have entr, run `go run main.go server --runner --config config/example.yml`

@@ -1,23 +1,10 @@
 package config
 
-// Copyright 2021 Preetam Jinka
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -25,53 +12,90 @@ import (
 )
 
 type Config struct {
-	DataSets []DataSet `yaml:"data_sets"`
+	Datasets        []Dataset        `yaml:"datasets" json:"datasets"`
+	DataConnections []DataConnection `yaml:"data_connections" json:"data_connections"`
+	Workflows       []Workflow       `yaml:"workflows" json:"workflows"`
 }
 
-type DataSet struct {
-	Name       string      `yaml:"name"`
-	DataSource *DataSource `yaml:"data_source"`
-	Joins      []Join      `yaml:"joins"`
+type Dataset struct {
+	ID         string      `yaml:"id" json:"id"`
+	Refresh    *Refresh    `yaml:"refresh" json:"refresh"`
+	DataSource *DataSource `yaml:"data_source" json:"data_source"`
+	Joins      []Join      `yaml:"joins" json:"joins"`
+}
+
+type Refresh struct {
+	Interval string `yaml:"interval" json:"interval"`
+}
+
+type DataConnection struct {
+	ID               string `yaml:"id" json:"id"`
+	Type             string `yaml:"type" json:"type"`
+	Path             string `yaml:"path" json:"path"`
+	ConnectionString string `yaml:"connection_string" json:"connection_string"`
 }
 
 type DataSource struct {
-	Name             string `yaml:"name"`
-	Type             string `yaml:"type"`
-	Path             string `yaml:"path"`
-	ConnectionString string `yaml:"connection_string"`
-	Query            string `yaml:"query"`
+	ID             string `yaml:"id" json:"id"`
+	DataConnection string `yaml:"data_connection" json:"data_connection"`
+	Query          string `yaml:"query" json:"query"`
 }
 
-func (ds *DataSource) expandConnectionString() {
-	if strings.HasPrefix(ds.ConnectionString, "$") {
-		ds.ConnectionString = os.ExpandEnv(ds.ConnectionString)
+func (dc *DataConnection) expandConnectionString() {
+	if strings.HasPrefix(dc.ConnectionString, "$") {
+		dc.ConnectionString = os.ExpandEnv(dc.ConnectionString)
 	}
 }
 
 type Join struct {
-	Type       string        `yaml:"type"`
-	Columns    []JoinColumns `yaml:"columns"`
-	DataSource *DataSource   `yaml:"data_source"`
+	Type       string        `yaml:"type" json:"type"`
+	Columns    []JoinColumns `yaml:"columns" json:"columns"`
+	DataSource *DataSource   `yaml:"data_source" json:"data_source"`
 }
 
 type JoinColumns struct {
-	LeftColumn  string `yaml:"left_column"`
-	RightColumn string `yaml:"right_column"`
+	LeftColumn  string `yaml:"left_column" json:"left_column"`
+	RightColumn string `yaml:"right_column" json:"right_column"`
 }
 
-func (c *Config) Parse(content []byte) error {
+type Workflow struct {
+	ID    string                   `yaml:"id" json:"id"`
+	Start string                   `yaml:"start" json:"start"`
+	On    *WorkflowTrigger         `yaml:"on" json:"on"`
+	Tasks map[string]*WorkflowTask `yaml:"tasks" json:"tasks"`
+}
+
+type WorkflowTrigger struct {
+	DatasetRefresh []string `yaml:"dataset_refresh" json:"dataset_refresh"`
+}
+
+func (w *Workflow) Parse(content []byte) error {
+	return yaml.Unmarshal(content, w)
+}
+
+type WorkflowTask struct {
+	Next string `yaml:"next,omitempty" json:"next,omitempty"`
+
+	Type         string                 `yaml:"type" json:"type"`
+	Env          map[string]string      `yaml:"env" json:"env"`
+	With         map[string]interface{} `yaml:"with" json:"with"`
+	WithDatasets []string               `yaml:"with_datasets" json:"with_datasets"`
+
+	Image  string `yaml:"image,omitempty" json:"image,omitempty"` // for "container" type
+	Script string `yaml:"script,omitempty" json:"script,omitempty"`
+}
+
+func (c *Config) Parse(content []byte, dir string) error {
 	err := yaml.Unmarshal(content, c)
 	if err != nil {
 		return err
 	}
 
-	for _, dataset := range c.DataSets {
-		if dataset.DataSource != nil {
-			dataset.DataSource.expandConnectionString()
-		}
-		for _, j := range dataset.Joins {
-			if j.DataSource != nil {
-				j.DataSource.expandConnectionString()
+	for i, dataConnection := range c.DataConnections {
+		dataConnection.expandConnectionString()
+		if dataConnection.Path != "" {
+			if !filepath.IsAbs(dataConnection.Path) {
+				c.DataConnections[i].Path = filepath.Join(dir, dataConnection.Path)
 			}
 		}
 	}
@@ -84,66 +108,99 @@ func (c *Config) String() string {
 	return string(b)
 }
 
+func (w Workflow) String() string {
+	b, _ := yaml.Marshal(w)
+	return string(b)
+}
+
 func (c *Config) validate() error {
-	seenDataSetNames := map[string]bool{}
-	for _, dataSet := range c.DataSets {
-		seenDataSourceNames := map[string]bool{}
-		if !validName(dataSet.Name) {
-			return fmt.Errorf("invalid name `%s`", dataSet.Name)
-		}
-		if seenDataSetNames[dataSet.Name] {
-			return fmt.Errorf("duplicate data set name `%s`", dataSet.Name)
-		}
-		seenDataSetNames[dataSet.Name] = true
-		if dataSet.DataSource == nil {
-			return errors.New("missing data source")
-		}
-		err := dataSet.DataSource.validate()
+
+	dataConnectionTypes := map[string]string{}
+	seenDataConnectionIDs := map[string]bool{}
+	for _, dataConnection := range c.DataConnections {
+		err := dataConnection.validate()
 		if err != nil {
 			return err
 		}
-		if dataSet.Name == dataSet.DataSource.Name {
-			return fmt.Errorf("data source can't have the same name as the data set (`%s`)", dataSet.Name)
+		if seenDataConnectionIDs[dataConnection.ID] {
+			return fmt.Errorf("duplicate data connection ID `%s`", dataConnection.ID)
 		}
-		seenDataSourceNames[dataSet.DataSource.Name] = true
-		for _, j := range dataSet.Joins {
+		seenDataConnectionIDs[dataConnection.ID] = true
+		dataConnectionTypes[dataConnection.ID] = dataConnection.Type
+	}
+
+	seenDataSetIDs := map[string]bool{}
+	for _, dataset := range c.Datasets {
+		seenDataSourceIDs := map[string]bool{}
+		if !validID(dataset.ID) {
+			return fmt.Errorf("invalid ID `%s`", dataset.ID)
+		}
+		if seenDataSetIDs[dataset.ID] {
+			return fmt.Errorf("duplicate dataset ID `%s`", dataset.ID)
+		}
+		seenDataSetIDs[dataset.ID] = true
+		if dataset.DataSource == nil {
+			return errors.New("missing data source")
+		}
+		err := dataset.DataSource.validate(dataConnectionTypes[dataset.DataSource.DataConnection])
+		if err != nil {
+			return err
+		}
+		if dataset.ID == dataset.DataSource.ID {
+			return fmt.Errorf("data source can't have the same ID as the dataset (`%s`)", dataset.ID)
+		}
+		seenDataSourceIDs[dataset.DataSource.ID] = true
+		for _, j := range dataset.Joins {
 			if j.DataSource == nil {
 				return errors.New("missing data source for join")
 			}
-			err := j.DataSource.validate()
+			err := j.DataSource.validate(dataConnectionTypes[j.DataSource.DataConnection])
 			if err != nil {
 				return err
 			}
-			if seenDataSourceNames[j.DataSource.Name] {
-				return fmt.Errorf("duplicate data source name `%s`", j.DataSource.Name)
+			if seenDataSourceIDs[j.DataSource.ID] {
+				return fmt.Errorf("duplicate data source ID `%s`", j.DataSource.ID)
 			}
-			seenDataSetNames[j.DataSource.Name] = true
+			seenDataSetIDs[j.DataSource.ID] = true
 		}
 	}
 	return nil
 }
 
-func (ds *DataSource) validate() error {
-	if !validName(ds.Name) {
-		return fmt.Errorf("invalid name `%s`", ds.Name)
+func (dc *DataConnection) validate() error {
+	if !validID(dc.ID) {
+		return fmt.Errorf("invalid ID `%s`", dc.ID)
 	}
-	switch ds.Type {
+	switch dc.Type {
 	case "postgres":
-		if ds.Query == "" {
-			return fmt.Errorf("missing query for data source `%s`", ds.Name)
+		if dc.ConnectionString == "" {
+			return fmt.Errorf("missing connection string for data connection `%s`", dc.ID)
 		}
 	case "csv":
-		if ds.Path == "" {
-			return fmt.Errorf("missing path for data source `%s`", ds.Name)
+		if dc.Path == "" {
+			return fmt.Errorf("missing path for data connection `%s`", dc.ID)
 		}
 	default:
-		return fmt.Errorf("unknown data source type `%s`", ds.Type)
+		return fmt.Errorf("unknown data connection type `%s`", dc.Type)
 	}
 	return nil
 }
 
-var validNameRegexp = regexp.MustCompile(`^[a-zA-Z]([\w-]*[a-zA-Z0-9])?$`)
+func (ds *DataSource) validate(dataConnectionType string) error {
+	if !validID(ds.ID) {
+		return fmt.Errorf("invalid ID `%s`", ds.ID)
+	}
+	switch dataConnectionType {
+	case "postgres":
+		if ds.Query == "" {
+			return fmt.Errorf("missing query")
+		}
+	}
+	return nil
+}
 
-func validName(s string) bool {
-	return validNameRegexp.MatchString(s)
+var validIDRegexp = regexp.MustCompile(`^[a-zA-Z]([\w-]*[a-zA-Z0-9])?$`)
+
+func validID(s string) bool {
+	return validIDRegexp.MatchString(s)
 }

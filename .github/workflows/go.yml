@@ -12,34 +12,55 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.17
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "17"
+          cache: "npm"
+          cache-dependency-path: ui/package-lock.json
+      - run: cd ui && npm install
+      - run: cd ui && npm run build
       - name: Build
         run: go build -v ./...
       - name: Test
         run: go test -v ./...
 
   package_cli:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        GOOS:
-          - linux
-          - darwin
-        GOARCH:
-          - arm64
-          - amd64
+        include:
+          - os: ubuntu-latest
+            GOARCH: amd64
+          - os: ubuntu-latest
+            GOARCH: arm64
+            CC: aarch64-linux-gnu-gcc
+          - os: macos-latest
+            GOARCH: amd64
+          - os: macos-latest
+            GOARCH: arm64
     steps:
+      - run: sudo apt update && sudo apt install gcc-aarch64-linux-gnu
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.GOARCH == 'arm64' }}
       - uses: actions/checkout@v2
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.17
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "17"
+          cache: "npm"
+          cache-dependency-path: ui/package-lock.json
+      - run: cd ui && npm install
+      - run: cd ui && npm run build
       - name: Build
-        run: go build -o build/crossjoin ./cmd/crossjoin
+        run: go build -o build/crossjoin .
         env:
-          GOOS: ${{ matrix.GOOS }}
+          CGO_ENABLED: "1"
           GOARCH: ${{ matrix.GOARCH }}
+          CC: ${{ matrix.CC }}
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: crossjoin-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+          name: crossjoin-${{ matrix.os }}-${{ matrix.GOARCH }}
           path: build/crossjoin

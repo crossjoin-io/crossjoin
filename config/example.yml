@@ -1,0 +1,50 @@
+data_connections:
+  - id: orders
+    type: csv
+    path: ../example/orders.csv
+  - id: returns
+    type: csv
+    path: ../example/returns.csv
+datasets:
+  - id: orders_and_returns
+    refresh:
+      interval: 30s
+    data_source:
+      id: orders
+      data_connection: orders
+    joins:
+      - type: JOIN
+        columns:
+          - left_column: Order ID
+            right_column: Order ID
+        data_source:
+          id: returns
+          data_connection: returns
+workflows:
+  - id: my-workflow
+    start: say_hi
+    on:
+      dataset_refresh:
+        - orders_and_returns
+    tasks:
+      say_hi:
+        type: container
+        next: print_10_rows
+        image: alpine
+        with:
+          baz: baz
+        script: |
+          #!/bin/sh
+          apk add jq
+          echo hi
+          mv /runner/in.json /runner/out.json
+          ls /runner
+      print_10_rows:
+        type: container
+        with_datasets:
+          - orders_and_returns
+        image: alpine
+        script: |
+          #!/bin/sh
+          apk add jq sqlite miller > /dev/null 2>&1
+          sqlite3 -csv -header /runner/orders_and_returns.db "select * from orders_and_returns limit 10" | mlr --icsv --ojson --jlistwrap cat | jq '{"rows": .}' > /runner/out.json
