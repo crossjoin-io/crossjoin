@@ -6,7 +6,7 @@ import (
 	"github.com/crossjoin-io/crossjoin/config"
 )
 
-func (api *API) getDataConnections(r *http.Request) Response {
+func (api *API) getDataConnections(_ http.ResponseWriter, r *http.Request) Response {
 	rows, err := api.db.Query("SELECT name, type, path, connection_string FROM data_connections")
 	if err != nil {
 		return Response{

@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (api *API) postTasksResult(r *http.Request) Response {
+func (api *API) postTasksResult(_ http.ResponseWriter, r *http.Request) Response {
 	result := TaskResult{}
 	err := json.NewDecoder(r.Body).Decode(&result)
 	if err != nil {

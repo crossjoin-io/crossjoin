@@ -2,13 +2,14 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/crossjoin-io/crossjoin/config"
 	"github.com/google/uuid"
 )
 
 func (api *API) StoreWorkflow(workflow config.Workflow) error {
-	_, err := api.db.Exec("INSERT INTO workflows (id, text) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+	_, err := api.db.Exec("REPLACE INTO workflows (id, text) VALUES ($1, $2)",
 		workflow.ID, workflow.String(),
 	)
 	return err
@@ -52,6 +53,29 @@ func (api *API) GetWorkflow(id string) (*config.Workflow, error) {
 		return nil, err
 	}
 	return workflow, nil
+}
+
+func (api *API) GetWorkflows() (map[string]config.Workflow, error) {
+	rows, err := api.db.Query("SELECT text FROM workflows")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	workflows := map[string]config.Workflow{}
+	for rows.Next() {
+		var workflowText []byte
+		err = rows.Scan(&workflowText)
+		if err != nil {
+			return nil, err
+		}
+		workflow := config.Workflow{}
+		err = workflow.Parse(workflowText)
+		if err != nil {
+			return nil, fmt.Errorf("parse workflow: %w", err)
+		}
+		workflows[workflow.ID] = workflow
+	}
+	return workflows, nil
 }
 
 func (api *API) GetWorkflowFromWorkflowRunID(workflowRunID string) (*config.Workflow, error) {

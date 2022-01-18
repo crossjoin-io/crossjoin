@@ -7,6 +7,8 @@ data_connections:
     path: ../example/returns.csv
 datasets:
   - name: orders_and_returns
+    refresh:
+      interval: 30s
     data_source:
       name: orders
       data_connection: orders
@@ -21,10 +23,13 @@ datasets:
 workflows:
   - id: my-workflow
     start: say_hi
+    on:
+      dataset_refresh:
+        - orders_and_returns
     tasks:
       say_hi:
         type: container
-        next: say_next
+        next: print_10_rows
         image: alpine
         with:
           baz: baz
@@ -33,21 +38,13 @@ workflows:
           apk add jq
           echo hi
           mv /runner/in.json /runner/out.json
-      say_next:
+          ls /runner
+      print_10_rows:
         type: container
-        next: say_bye
+        with_datasets:
+          - orders_and_returns
         image: alpine
         script: |
           #!/bin/sh
-          echo next
-          mv /runner/in.json /runner/out.json
-      say_bye:
-        type: container
-        image: ubuntu
-        env:
-          foo: bar
-        script: |
-          #!/bin/sh
-          echo bye
-          mv /runner/in.json /runner/out.json
-          env
+          apk add jq sqlite miller > /dev/null 2>&1
+          sqlite3 -csv -header /runner/orders_and_returns.db "select * from orders_and_returns limit 10" | mlr --icsv --ojson --jlistwrap cat | jq '{"rows": .}' > /runner/out.json

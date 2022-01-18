@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (api *API) postWorkflowsStart(r *http.Request) Response {
+func (api *API) postWorkflowsStart(_ http.ResponseWriter, r *http.Request) Response {
 	vars := mux.Vars(r)
 	workflowID := vars["workflow_id"]
 

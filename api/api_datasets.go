@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func (api *API) getDatasets(r *http.Request) Response {
+func (api *API) getDatasets(_ http.ResponseWriter, r *http.Request) Response {
 	rows, err := api.db.Query("SELECT name, text FROM datasets")
 	if err != nil {
 		return Response{

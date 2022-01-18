@@ -6,11 +6,12 @@ import (
 )
 
 type Task struct {
-	ID     string                 `json:"id"`
-	Image  string                 `json:"image"`
-	Script string                 `json:"script"`
-	Env    map[string]string      `yaml:"env"`
-	Input  map[string]interface{} `yaml:"input"`
+	ID       string                 `json:"id"`
+	Image    string                 `json:"image"`
+	Script   string                 `json:"script"`
+	Env      map[string]string      `yaml:"env"`
+	Datasets []string               `json:"datasets"`
+	Input    map[string]interface{} `yaml:"input"`
 }
 
 type TaskResult struct {
@@ -50,4 +51,13 @@ type Response struct {
 	Status   int         `json:"-"`
 	Error    string      `json:"error,omitempty"`
 	Response interface{} `json:"response,omitempty"`
+
+	// internal
+	customResponse bool
+}
+
+func CustomResponse() Response {
+	return Response{
+		customResponse: true,
+	}
 }

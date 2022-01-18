@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -39,7 +40,7 @@ func (run *Runner) Start() error {
 			continue
 		}
 		start := time.Now()
-		result, err := runTaskContainer(task)
+		result, err := run.runTaskContainer(task)
 		if err != nil {
 			return err
 		}
@@ -83,7 +84,30 @@ func (run *Runner) pollForTask() (*api.Task, error) {
 	return decodedResponse.Response, nil
 }
 
-func runTaskContainer(t *api.Task) (*api.TaskResult, error) {
+func (run *Runner) downloadDataset(dataset string, destinationDirectory string) error {
+	resp, err := http.Get(run.apiURL + fmt.Sprintf("/api/datasets/%s/download", dataset))
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	if resp.StatusCode/100 != 2 {
+		// Didn't get a 2xx status code
+		return fmt.Errorf("got status %d", resp.StatusCode)
+	}
+	f, err := os.Create(filepath.Join(destinationDirectory, dataset+".db"))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = io.Copy(f, resp.Body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
+
+func (run *Runner) runTaskContainer(t *api.Task) (*api.TaskResult, error) {
 	dir, err := os.MkdirTemp("", "crossjoin_runner_*")
 	if err != nil {
 		log.Println(err)
@@ -95,6 +119,16 @@ func runTaskContainer(t *api.Task) (*api.TaskResult, error) {
 		log.Println(err)
 		return nil, err
 	}
+
+	for _, dataset := range t.Datasets {
+		// Download each dataset
+		err = run.downloadDataset(dataset, dir)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+	}
+
 	err = os.WriteFile(filepath.Join(dir, "in.json"), input, 0644)
 	if err != nil {
 		log.Println(err)

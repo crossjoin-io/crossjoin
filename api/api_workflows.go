@@ -6,7 +6,7 @@ import (
 	"github.com/crossjoin-io/crossjoin/config"
 )
 
-func (api *API) getWorkflows(r *http.Request) Response {
+func (api *API) getWorkflows(_ http.ResponseWriter, r *http.Request) Response {
 	rows, err := api.db.Query("SELECT id, text FROM workflows")
 	if err != nil {
 		return Response{

@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (api *API) getDatasetPreview(r *http.Request) Response {
+func (api *API) getDatasetPreview(_ http.ResponseWriter, r *http.Request) Response {
 	vars := mux.Vars(r)
 	datasetName := vars["dataset_name"]
 

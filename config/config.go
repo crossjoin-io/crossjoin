@@ -19,8 +19,13 @@ type Config struct {
 
 type Dataset struct {
 	Name       string      `yaml:"name"`
+	Refresh    *Refresh    `yaml:"refresh"`
 	DataSource *DataSource `yaml:"data_source"`
 	Joins      []Join      `yaml:"joins"`
+}
+
+type Refresh struct {
+	Interval string `yaml:"interval"`
 }
 
 type DataConnection struct {
@@ -56,7 +61,12 @@ type JoinColumns struct {
 type Workflow struct {
 	ID    string                   `yaml:"id"`
 	Start string                   `yaml:"start"`
+	On    *WorkflowTrigger         `yaml:"on"`
 	Tasks map[string]*WorkflowTask `yaml:"tasks"`
+}
+
+type WorkflowTrigger struct {
+	DatasetRefresh []string `yaml:"dataset_refresh"`
 }
 
 func (w *Workflow) Parse(content []byte) error {
@@ -66,9 +76,10 @@ func (w *Workflow) Parse(content []byte) error {
 type WorkflowTask struct {
 	Next string `yaml:"next,omitempty"`
 
-	Type string                 `yaml:"type"`
-	Env  map[string]string      `yaml:"env"`
-	With map[string]interface{} `yaml:"params"`
+	Type         string                 `yaml:"type"`
+	Env          map[string]string      `yaml:"env"`
+	With         map[string]interface{} `yaml:"with"`
+	WithDatasets []string               `yaml:"with_datasets"`
 
 	Image  string `yaml:"image,omitempty"` // for "container" type
 	Script string `yaml:"script,omitempty"`

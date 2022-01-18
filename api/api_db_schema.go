@@ -2,7 +2,7 @@ package api
 
 import "net/http"
 
-func (api *API) getDBSchema(r *http.Request) Response {
+func (api *API) getDBSchema(_ http.ResponseWriter, r *http.Request) Response {
 	rows, err := api.db.Query("SELECT name, sql FROM sqlite_master WHERE type = $1", "table")
 	if err != nil {
 		return Response{

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/crossjoin-io/crossjoin/config"
 	"gopkg.in/yaml.v2"
@@ -27,7 +28,20 @@ func (api *API) StoreDataset(dataset config.Dataset) error {
 	if err != nil {
 		return err
 	}
-	err = api.createDataset(dataset)
+	if dataset.Refresh != nil {
+		dur, err := time.ParseDuration(dataset.Refresh.Interval)
+		if err != nil {
+			return fmt.Errorf("parse refresh interval: %w", err)
+		}
+		ticker := time.NewTicker(dur)
+		go func() {
+			for range ticker.C {
+				log.Println("refreshing", dataset.Name)
+				api.refreshDataset(dataset.Name)
+			}
+		}()
+	}
+	err = api.refreshDataset(dataset.Name)
 	return err
 }
 
@@ -68,6 +82,42 @@ func (api *API) PreviewDataset(name string) ([]interface{}, error) {
 		result = append(result, row)
 	}
 	return result, nil
+}
+
+func (api *API) refreshDataset(name string) error {
+	text := ""
+	err := api.db.QueryRow("SELECT text FROM datasets WHERE name = $1", name).Scan(&text)
+	if err != nil {
+		return err
+	}
+	dataset := config.Dataset{}
+	err = yaml.Unmarshal([]byte(text), &dataset)
+	if err != nil {
+		return err
+	}
+	err = api.createDataset(dataset)
+	if err != nil {
+		return fmt.Errorf("create dataset: %w", err)
+	}
+	workflows, err := api.GetWorkflows()
+	if err != nil {
+		return fmt.Errorf("get workflows: %w", err)
+	}
+
+	for _, workflow := range workflows {
+		if workflow.On == nil {
+			continue
+		}
+		for _, datasetID := range workflow.On.DatasetRefresh {
+			if datasetID == name {
+				err = api.StartWorkflow(workflow.ID, nil)
+				if err != nil {
+					return fmt.Errorf("start workflow: %w", err)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (api *API) createDataset(dataset config.Dataset) error {

@@ -11,12 +11,12 @@ import (
 	"github.com/crossjoin-io/crossjoin/config"
 )
 
-func (api *API) getTasksPoll(r *http.Request) Response {
+func (api *API) getTasksPoll(_ http.ResponseWriter, r *http.Request) Response {
 	tx, err := api.db.Begin()
 	if err != nil {
 		if strings.Contains(err.Error(), "database is locked") {
 			log.Println(err)
-			return api.getTasksPoll(r)
+			return api.getTasksPoll(nil, r)
 		}
 		log.Println(err)
 		return Response{
@@ -85,6 +85,7 @@ func (api *API) getTasksPoll(r *http.Request) Response {
 	t.Image = task.Image
 	t.Script = task.Script
 	t.Env = task.Env
+	t.Datasets = task.WithDatasets
 
 	log.Println("marking task as started")
 	_, err = tx.Exec("update tasks set started_at = datetime('now'), "+
