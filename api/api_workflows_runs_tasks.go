@@ -1,6 +1,8 @@
 package api
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -26,6 +28,7 @@ func (api *API) getWorkflowRunTasks(_ http.ResponseWriter, r *http.Request) Resp
 	FROM tasks WHERE workflow_run_id = $1`,
 		workflowRunID)
 	if err != nil {
+		log.Println(err)
 		return Response{
 			Status: http.StatusInternalServerError,
 			Error:  err.Error(),
@@ -37,15 +40,18 @@ func (api *API) getWorkflowRunTasks(_ http.ResponseWriter, r *http.Request) Resp
 		run := TaskRun{
 			WorkflowRunID: workflowRunID,
 		}
-		err = rows.Scan(&run.ID, &run.WorkflowTaskID, &run.Input, &run.Output,
+		output := ""
+		err = rows.Scan(&run.ID, &run.WorkflowTaskID, &run.Input, &output,
 			&run.CreatedAt, &run.StartedAt, &run.TimeoutAt, &run.CompletedAt, &run.AttemptsLeft,
 			&run.Stdout, &run.Stderr, &run.Success)
 		if err != nil {
+			log.Println(err)
 			return Response{
 				Status: http.StatusInternalServerError,
 				Error:  err.Error(),
 			}
 		}
+		run.Output = json.RawMessage(output)
 		runs = append(runs, run)
 	}
 	return Response{

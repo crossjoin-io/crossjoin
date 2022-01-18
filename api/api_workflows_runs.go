@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -13,6 +14,7 @@ func (api *API) getWorkflowRuns(_ http.ResponseWriter, r *http.Request) Response
 	rows, err := api.db.Query("SELECT id, started_at, completed_at, success FROM workflow_runs WHERE workflow_id = $1",
 		workflowID)
 	if err != nil {
+		log.Println(err)
 		return Response{
 			Status: http.StatusInternalServerError,
 			Error:  err.Error(),
@@ -26,6 +28,7 @@ func (api *API) getWorkflowRuns(_ http.ResponseWriter, r *http.Request) Response
 		}
 		err = rows.Scan(&run.ID, &run.StartedAt, &run.CompletedAt, &run.Success)
 		if err != nil {
+			log.Println(err)
 			return Response{
 				Status: http.StatusInternalServerError,
 				Error:  err.Error(),

@@ -34,8 +34,8 @@ export function Workflows() {
   for (id in workflows) {
     workflowElems.push(
       html`<tr>
-        <td>${workflows[id].ID}</td>
-        <td>${Object.keys(workflows[id].Tasks || {}).length} tasks</td>
+        <td>${workflows[id].id}</td>
+        <td>${Object.keys(workflows[id].tasks || {}).length} tasks</td>
         <td><a href="/app/workflows/${id}/runs">Runs</a></td>
       </tr>`
     );

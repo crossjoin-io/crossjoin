@@ -12,33 +12,33 @@ import (
 )
 
 type Config struct {
-	Datasets        []Dataset        `yaml:"datasets"`
-	DataConnections []DataConnection `yaml:"data_connections"`
-	Workflows       []Workflow       `yaml:"workflows"`
+	Datasets        []Dataset        `yaml:"datasets" json:"datasets"`
+	DataConnections []DataConnection `yaml:"data_connections" json:"data_connections"`
+	Workflows       []Workflow       `yaml:"workflows" json:"workflows"`
 }
 
 type Dataset struct {
-	ID         string      `yaml:"id"`
-	Refresh    *Refresh    `yaml:"refresh"`
-	DataSource *DataSource `yaml:"data_source"`
-	Joins      []Join      `yaml:"joins"`
+	ID         string      `yaml:"id" json:"id"`
+	Refresh    *Refresh    `yaml:"refresh" json:"refresh"`
+	DataSource *DataSource `yaml:"data_source" json:"data_source"`
+	Joins      []Join      `yaml:"joins" json:"joins"`
 }
 
 type Refresh struct {
-	Interval string `yaml:"interval"`
+	Interval string `yaml:"interval" json:"interval"`
 }
 
 type DataConnection struct {
-	ID               string `yaml:"id"`
-	Type             string `yaml:"type"`
-	Path             string `yaml:"path"`
-	ConnectionString string `yaml:"connection_string"`
+	ID               string `yaml:"id" json:"id"`
+	Type             string `yaml:"type" json:"type"`
+	Path             string `yaml:"path" json:"path"`
+	ConnectionString string `yaml:"connection_string" json:"connection_string"`
 }
 
 type DataSource struct {
-	ID             string `yaml:"id"`
-	DataConnection string `yaml:"data_connection"`
-	Query          string `yaml:"query"`
+	ID             string `yaml:"id" json:"id"`
+	DataConnection string `yaml:"data_connection" json:"data_connection"`
+	Query          string `yaml:"query" json:"query"`
 }
 
 func (dc *DataConnection) expandConnectionString() {
@@ -48,25 +48,25 @@ func (dc *DataConnection) expandConnectionString() {
 }
 
 type Join struct {
-	Type       string        `yaml:"type"`
-	Columns    []JoinColumns `yaml:"columns"`
-	DataSource *DataSource   `yaml:"data_source"`
+	Type       string        `yaml:"type" json:"type"`
+	Columns    []JoinColumns `yaml:"columns" json:"columns"`
+	DataSource *DataSource   `yaml:"data_source" json:"data_source"`
 }
 
 type JoinColumns struct {
-	LeftColumn  string `yaml:"left_column"`
-	RightColumn string `yaml:"right_column"`
+	LeftColumn  string `yaml:"left_column" json:"left_column"`
+	RightColumn string `yaml:"right_column" json:"right_column"`
 }
 
 type Workflow struct {
-	ID    string                   `yaml:"id"`
-	Start string                   `yaml:"start"`
-	On    *WorkflowTrigger         `yaml:"on"`
-	Tasks map[string]*WorkflowTask `yaml:"tasks"`
+	ID    string                   `yaml:"id" json:"id"`
+	Start string                   `yaml:"start" json:"start"`
+	On    *WorkflowTrigger         `yaml:"on" json:"on"`
+	Tasks map[string]*WorkflowTask `yaml:"tasks" json:"tasks"`
 }
 
 type WorkflowTrigger struct {
-	DatasetRefresh []string `yaml:"dataset_refresh"`
+	DatasetRefresh []string `yaml:"dataset_refresh" json:"dataset_refresh"`
 }
 
 func (w *Workflow) Parse(content []byte) error {
@@ -74,15 +74,15 @@ func (w *Workflow) Parse(content []byte) error {
 }
 
 type WorkflowTask struct {
-	Next string `yaml:"next,omitempty"`
+	Next string `yaml:"next,omitempty" json:"next,omitempty"`
 
-	Type         string                 `yaml:"type"`
-	Env          map[string]string      `yaml:"env"`
-	With         map[string]interface{} `yaml:"with"`
-	WithDatasets []string               `yaml:"with_datasets"`
+	Type         string                 `yaml:"type" json:"type"`
+	Env          map[string]string      `yaml:"env" json:"env"`
+	With         map[string]interface{} `yaml:"with" json:"with"`
+	WithDatasets []string               `yaml:"with_datasets" json:"with_datasets"`
 
-	Image  string `yaml:"image,omitempty"` // for "container" type
-	Script string `yaml:"script,omitempty"`
+	Image  string `yaml:"image,omitempty" json:"image,omitempty"` // for "container" type
+	Script string `yaml:"script,omitempty" json:"script,omitempty"`
 }
 
 func (c *Config) Parse(content []byte, dir string) error {

@@ -2,8 +2,6 @@ package api
 
 import (
 	"net/http"
-
-	"github.com/crossjoin-io/crossjoin/config"
 )
 
 func (api *API) getDataConnections(_ http.ResponseWriter, r *http.Request) Response {
@@ -15,9 +13,9 @@ func (api *API) getDataConnections(_ http.ResponseWriter, r *http.Request) Respo
 		}
 	}
 	defer rows.Close()
-	connections := []config.DataConnection{}
+	connections := []DataConnection{}
 	for rows.Next() {
-		connection := config.DataConnection{}
+		connection := DataConnection{}
 		err = rows.Scan(&connection.ID, &connection.Type, &connection.Path, &connection.ConnectionString)
 		if err != nil {
 			return Response{

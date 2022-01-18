@@ -30,6 +30,10 @@ func NewRunner(apiURL string) (*Runner, error) {
 }
 
 func (run *Runner) Start() error {
+	err := testDocker()
+	if err != nil {
+		return fmt.Errorf("test docker: %w -- Is Docker running?", err)
+	}
 	for {
 		task, err := run.pollForTask()
 		if err != nil {
@@ -147,7 +151,6 @@ func (run *Runner) runTaskContainer(t *api.Task) (*api.TaskResult, error) {
 		args = append(args, "-e", fmt.Sprintf("%s=%s", k, v))
 	}
 	args = append(args, t.Image)
-	fmt.Println(args)
 	cmd := exec.Command("docker", args...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -175,7 +178,6 @@ func (run *Runner) runTaskContainer(t *api.Task) (*api.TaskResult, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("got task output", output)
 	}
 	return &api.TaskResult{
 		ID:     t.ID,
@@ -184,4 +186,10 @@ func (run *Runner) runTaskContainer(t *api.Task) (*api.TaskResult, error) {
 		Stderr: stderr.String(),
 		Output: output,
 	}, nil
+}
+
+func testDocker() error {
+	cmd := exec.Command("docker", "ps")
+	_, err := cmd.CombinedOutput()
+	return err
 }

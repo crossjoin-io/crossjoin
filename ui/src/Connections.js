@@ -34,10 +34,10 @@ export function Connections() {
   for (i in connections) {
     connectionElems.push(
       html`<tr>
-        <td>${connections[i].Name}</td>
-        <td>${connections[i].Type}</td>
-        <td>${connections[i].Path}</td>
-        <td>${connections[i].ConnectionString}</td>
+        <td>${connections[i].name}</td>
+        <td>${connections[i].type}</td>
+        <td>${connections[i].path}</td>
+        <td>${connections[i].connection_string}</td>
       </tr>`
     );
   }

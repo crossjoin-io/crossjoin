@@ -34,9 +34,9 @@ export function Datasets() {
   for (i in datasets) {
     datasetElems.push(
       html`<tr>
-        <td>${datasets[i].ID}</td>
+        <td>${datasets[i].id}</td>
         <td><pre>${datasets[i].Text}</pre></td>
-        <td><a href="/app/datasets/${datasets[i].ID}/preview">Preview</a></td>
+        <td><a href="/app/datasets/${datasets[i].id}/preview">Preview</a></td>
       </tr>`
     );
   }

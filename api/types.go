@@ -46,6 +46,13 @@ type TaskRun struct {
 	Success        *bool           `json:"success"`
 }
 
+type DataConnection struct {
+	ID               string `json:"id"`
+	Type             string `json:"type"`
+	Path             string `json:"path"`
+	ConnectionString string `json:"connection_string"`
+}
+
 type Response struct {
 	OK       bool        `json:"ok"`
 	Status   int         `json:"-"`
