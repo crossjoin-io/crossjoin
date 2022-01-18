@@ -1,4 +1,4 @@
-# Crossjoin [![Docker](https://github.com/crossjoin-io/crossjoin/actions/workflows/docker.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/actions/workflows/docker.yml) [![CLI](https://github.com/crossjoin-io/crossjoin/actions/workflows/go.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/actions/workflows/go.yml) [![Security scan](https://github.com/crossjoin-io/crossjoin/actions/workflows/shiftleft.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/blob/main/SECURITY.md)
+# Crossjoin [![Docker](https://github.com/crossjoin-io/crossjoin/actions/workflows/docker.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/actions/workflows/docker.yml) [![CLI](https://github.com/crossjoin-io/crossjoin/actions/workflows/go.yml/badge.svg)](https://github.com/crossjoin-io/crossjoin/actions/workflows/go.yml)
 
 Crossjoin is a service to run data-driven workflows.
 It joins together data from various data sources and triggers Docker-based workflows.

@@ -1,9 +1,0 @@
-build_rules:
-  - id: No critical vulns
-    finding_types:
-      - vuln
-    severity:
-      - critical
-  - id: No secrets
-    finding_types:
-      - secret
