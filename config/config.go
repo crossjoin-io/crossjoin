@@ -18,7 +18,7 @@ type Config struct {
 }
 
 type Dataset struct {
-	Name       string      `yaml:"name"`
+	ID         string      `yaml:"id"`
 	Refresh    *Refresh    `yaml:"refresh"`
 	DataSource *DataSource `yaml:"data_source"`
 	Joins      []Join      `yaml:"joins"`
@@ -29,14 +29,14 @@ type Refresh struct {
 }
 
 type DataConnection struct {
-	Name             string `yaml:"name"`
+	ID               string `yaml:"id"`
 	Type             string `yaml:"type"`
 	Path             string `yaml:"path"`
 	ConnectionString string `yaml:"connection_string"`
 }
 
 type DataSource struct {
-	Name           string `yaml:"name"`
+	ID             string `yaml:"id"`
 	DataConnection string `yaml:"data_connection"`
 	Query          string `yaml:"query"`
 }
@@ -116,29 +116,29 @@ func (w Workflow) String() string {
 func (c *Config) validate() error {
 
 	dataConnectionTypes := map[string]string{}
-	seenDataConnectionNames := map[string]bool{}
+	seenDataConnectionIDs := map[string]bool{}
 	for _, dataConnection := range c.DataConnections {
 		err := dataConnection.validate()
 		if err != nil {
 			return err
 		}
-		if seenDataConnectionNames[dataConnection.Name] {
-			return fmt.Errorf("duplicate data connection name `%s`", dataConnection.Name)
+		if seenDataConnectionIDs[dataConnection.ID] {
+			return fmt.Errorf("duplicate data connection ID `%s`", dataConnection.ID)
 		}
-		seenDataConnectionNames[dataConnection.Name] = true
-		dataConnectionTypes[dataConnection.Name] = dataConnection.Type
+		seenDataConnectionIDs[dataConnection.ID] = true
+		dataConnectionTypes[dataConnection.ID] = dataConnection.Type
 	}
 
-	seenDataSetNames := map[string]bool{}
+	seenDataSetIDs := map[string]bool{}
 	for _, dataset := range c.Datasets {
-		seenDataSourceNames := map[string]bool{}
-		if !validName(dataset.Name) {
-			return fmt.Errorf("invalid name `%s`", dataset.Name)
+		seenDataSourceIDs := map[string]bool{}
+		if !validID(dataset.ID) {
+			return fmt.Errorf("invalid ID `%s`", dataset.ID)
 		}
-		if seenDataSetNames[dataset.Name] {
-			return fmt.Errorf("duplicate dataset name `%s`", dataset.Name)
+		if seenDataSetIDs[dataset.ID] {
+			return fmt.Errorf("duplicate dataset ID `%s`", dataset.ID)
 		}
-		seenDataSetNames[dataset.Name] = true
+		seenDataSetIDs[dataset.ID] = true
 		if dataset.DataSource == nil {
 			return errors.New("missing data source")
 		}
@@ -146,10 +146,10 @@ func (c *Config) validate() error {
 		if err != nil {
 			return err
 		}
-		if dataset.Name == dataset.DataSource.Name {
-			return fmt.Errorf("data source can't have the same name as the dataset (`%s`)", dataset.Name)
+		if dataset.ID == dataset.DataSource.ID {
+			return fmt.Errorf("data source can't have the same ID as the dataset (`%s`)", dataset.ID)
 		}
-		seenDataSourceNames[dataset.DataSource.Name] = true
+		seenDataSourceIDs[dataset.DataSource.ID] = true
 		for _, j := range dataset.Joins {
 			if j.DataSource == nil {
 				return errors.New("missing data source for join")
@@ -158,27 +158,27 @@ func (c *Config) validate() error {
 			if err != nil {
 				return err
 			}
-			if seenDataSourceNames[j.DataSource.Name] {
-				return fmt.Errorf("duplicate data source name `%s`", j.DataSource.Name)
+			if seenDataSourceIDs[j.DataSource.ID] {
+				return fmt.Errorf("duplicate data source ID `%s`", j.DataSource.ID)
 			}
-			seenDataSetNames[j.DataSource.Name] = true
+			seenDataSetIDs[j.DataSource.ID] = true
 		}
 	}
 	return nil
 }
 
 func (dc *DataConnection) validate() error {
-	if !validName(dc.Name) {
-		return fmt.Errorf("invalid name `%s`", dc.Name)
+	if !validID(dc.ID) {
+		return fmt.Errorf("invalid ID `%s`", dc.ID)
 	}
 	switch dc.Type {
 	case "postgres":
 		if dc.ConnectionString == "" {
-			return fmt.Errorf("missing connection string for data connection `%s`", dc.Name)
+			return fmt.Errorf("missing connection string for data connection `%s`", dc.ID)
 		}
 	case "csv":
 		if dc.Path == "" {
-			return fmt.Errorf("missing path for data connection `%s`", dc.Name)
+			return fmt.Errorf("missing path for data connection `%s`", dc.ID)
 		}
 	default:
 		return fmt.Errorf("unknown data connection type `%s`", dc.Type)
@@ -187,8 +187,8 @@ func (dc *DataConnection) validate() error {
 }
 
 func (ds *DataSource) validate(dataConnectionType string) error {
-	if !validName(ds.Name) {
-		return fmt.Errorf("invalid name `%s`", ds.Name)
+	if !validID(ds.ID) {
+		return fmt.Errorf("invalid ID `%s`", ds.ID)
 	}
 	switch dataConnectionType {
 	case "postgres":
@@ -199,8 +199,8 @@ func (ds *DataSource) validate(dataConnectionType string) error {
 	return nil
 }
 
-var validNameRegexp = regexp.MustCompile(`^[a-zA-Z]([\w-]*[a-zA-Z0-9])?$`)
+var validIDRegexp = regexp.MustCompile(`^[a-zA-Z]([\w-]*[a-zA-Z0-9])?$`)
 
-func validName(s string) bool {
-	return validNameRegexp.MatchString(s)
+func validID(s string) bool {
+	return validIDRegexp.MatchString(s)
 }

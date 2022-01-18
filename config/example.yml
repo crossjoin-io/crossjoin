@@ -1,16 +1,16 @@
 data_connections:
-  - name: orders
+  - id: orders
     type: csv
     path: ../example/orders.csv
-  - name: returns
+  - id: returns
     type: csv
     path: ../example/returns.csv
 datasets:
-  - name: orders_and_returns
+  - id: orders_and_returns
     refresh:
       interval: 30s
     data_source:
-      name: orders
+      id: orders
       data_connection: orders
     joins:
       - type: JOIN
@@ -18,7 +18,7 @@ datasets:
           - left_column: Order ID
             right_column: Order ID
         data_source:
-          name: returns
+          id: returns
           data_connection: returns
 workflows:
   - id: my-workflow

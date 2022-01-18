@@ -8,7 +8,7 @@ import (
 )
 
 func (api *API) getDatasets(_ http.ResponseWriter, r *http.Request) Response {
-	rows, err := api.db.Query("SELECT name, text FROM datasets")
+	rows, err := api.db.Query("SELECT id, text FROM datasets")
 	if err != nil {
 		return Response{
 			Status: http.StatusInternalServerError,
@@ -24,7 +24,7 @@ func (api *API) getDatasets(_ http.ResponseWriter, r *http.Request) Response {
 	datasets := []datasetResponse{}
 	for rows.Next() {
 		dataset := datasetResponse{}
-		err = rows.Scan(&dataset.Name, &dataset.Text)
+		err = rows.Scan(&dataset.ID, &dataset.Text)
 		if err != nil {
 			return Response{
 				Status: http.StatusInternalServerError,

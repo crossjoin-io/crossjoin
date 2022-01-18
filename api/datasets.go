@@ -22,8 +22,8 @@ func (api *API) StoreDataset(dataset config.Dataset) error {
 	if err != nil {
 		return err
 	}
-	_, err = api.db.Exec("REPLACE INTO datasets (name, text) VALUES ($1, $2)",
-		dataset.Name, marshaledDatset,
+	_, err = api.db.Exec("REPLACE INTO datasets (id, text) VALUES ($1, $2)",
+		dataset.ID, marshaledDatset,
 	)
 	if err != nil {
 		return err
@@ -36,24 +36,24 @@ func (api *API) StoreDataset(dataset config.Dataset) error {
 		ticker := time.NewTicker(dur)
 		go func() {
 			for range ticker.C {
-				log.Println("refreshing", dataset.Name)
-				api.refreshDataset(dataset.Name)
+				log.Println("refreshing", dataset.ID)
+				api.refreshDataset(dataset.ID)
 			}
 		}()
 	}
-	err = api.refreshDataset(dataset.Name)
+	err = api.refreshDataset(dataset.ID)
 	return err
 }
 
-func (api *API) PreviewDataset(name string) ([]interface{}, error) {
-	filename := filepath.Join(api.dataDir, name+".db")
+func (api *API) PreviewDataset(id string) ([]interface{}, error) {
+	filename := filepath.Join(api.dataDir, id+".db")
 	db, err := sql.Open("sqlite3", filename)
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT * FROM " + name + " LIMIT 50")
+	rows, err := db.Query("SELECT * FROM " + id + " LIMIT 50")
 	if err != nil {
 		return nil, err
 	}
@@ -84,9 +84,9 @@ func (api *API) PreviewDataset(name string) ([]interface{}, error) {
 	return result, nil
 }
 
-func (api *API) refreshDataset(name string) error {
+func (api *API) refreshDataset(id string) error {
 	text := ""
-	err := api.db.QueryRow("SELECT text FROM datasets WHERE name = $1", name).Scan(&text)
+	err := api.db.QueryRow("SELECT text FROM datasets WHERE id = $1", id).Scan(&text)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (api *API) refreshDataset(name string) error {
 			continue
 		}
 		for _, datasetID := range workflow.On.DatasetRefresh {
-			if datasetID == name {
+			if datasetID == id {
 				err = api.StartWorkflow(workflow.ID, nil)
 				if err != nil {
 					return fmt.Errorf("start workflow: %w", err)
@@ -121,7 +121,7 @@ func (api *API) refreshDataset(name string) error {
 }
 
 func (api *API) createDataset(dataset config.Dataset) error {
-	filename := filepath.Join(api.dataDir, dataset.Name+".db")
+	filename := filepath.Join(api.dataDir, dataset.ID+".db")
 
 	// Does the file exist? If so, remove it.
 	_, err := os.Stat(filename)
@@ -148,17 +148,17 @@ func (api *API) createDataset(dataset config.Dataset) error {
 		return err
 	}
 
-	log.Printf("querying `%s`", dataset.DataSource.Name)
+	log.Printf("querying `%s`", dataset.DataSource.ID)
 	err = api.fetchSingle(db, dataset.DataSource)
 	if err != nil {
-		return err
+		return fmt.Errorf("fetch single: %w", err)
 	}
 
 	for _, join := range dataset.Joins {
-		log.Printf("querying `%s`", join.DataSource.Name)
+		log.Printf("querying `%s`", join.DataSource.ID)
 		err = api.fetchSingle(db, join.DataSource)
 		if err != nil {
-			return err
+			return fmt.Errorf("fetch single as part of join: %w", err)
 		}
 	}
 
@@ -166,13 +166,13 @@ func (api *API) createDataset(dataset config.Dataset) error {
 	for _, join := range dataset.Joins {
 		joinColumns := []string{}
 		for _, cols := range join.Columns {
-			joinColumns = append(joinColumns, fmt.Sprintf(`%s."%s" = %s."%s"`, dataset.DataSource.Name, cols.LeftColumn, join.DataSource.Name, cols.RightColumn))
+			joinColumns = append(joinColumns, fmt.Sprintf(`%s."%s" = %s."%s"`, dataset.DataSource.ID, cols.LeftColumn, join.DataSource.ID, cols.RightColumn))
 		}
-		joinClauses += fmt.Sprintf(" %s %s ON %s", join.Type, join.DataSource.Name, strings.Join(joinColumns, " AND "))
+		joinClauses += fmt.Sprintf(" %s %s ON %s", join.Type, join.DataSource.ID, strings.Join(joinColumns, " AND "))
 	}
 
 	log.Println("joining data")
-	joinQuery := fmt.Sprintf("CREATE TABLE %s AS SELECT * FROM %s %s", dataset.Name, dataset.DataSource.Name, joinClauses)
+	joinQuery := fmt.Sprintf("CREATE TABLE %s AS SELECT * FROM %s %s", dataset.ID, dataset.DataSource.ID, joinClauses)
 	_, err = db.Exec(joinQuery)
 	return err
 }
@@ -199,7 +199,7 @@ func (api *API) fetchSingle(dest *sql.DB, dataSource *config.DataSource) error {
 			columns[i] = strconv.Quote(columns[i])
 		}
 
-		_, err = dest.Exec(fmt.Sprintf("CREATE TABLE %s (%s)", dataSource.Name, strings.Join(columns, ",")))
+		_, err = dest.Exec(fmt.Sprintf("CREATE TABLE %s (%s)", dataSource.ID, strings.Join(columns, ",")))
 		if err != nil {
 			return err
 		}
@@ -208,7 +208,7 @@ func (api *API) fetchSingle(dest *sql.DB, dataSource *config.DataSource) error {
 		for i := range columns {
 			params = append(params, fmt.Sprintf("$%d", i+1))
 		}
-		stmt, err := dest.Prepare(fmt.Sprintf("INSERT INTO %s VALUES (%s)", dataSource.Name, strings.Join(params, ",")))
+		stmt, err := dest.Prepare(fmt.Sprintf("INSERT INTO %s VALUES (%s)", dataSource.ID, strings.Join(params, ",")))
 		if err != nil {
 			return err
 		}
@@ -256,7 +256,7 @@ func (api *API) fetchSingle(dest *sql.DB, dataSource *config.DataSource) error {
 			columns[i] = `"` + columns[i] + `"`
 		}
 
-		_, err = dest.Exec(fmt.Sprintf("CREATE TABLE %s (%s)", dataSource.Name, strings.Join(columns, ",")))
+		_, err = dest.Exec(fmt.Sprintf("CREATE TABLE %s (%s)", dataSource.ID, strings.Join(columns, ",")))
 		if err != nil {
 			return err
 		}
@@ -265,7 +265,7 @@ func (api *API) fetchSingle(dest *sql.DB, dataSource *config.DataSource) error {
 		for i := range columns {
 			params = append(params, fmt.Sprintf("$%d", i+1))
 		}
-		stmt, err := dest.Prepare(fmt.Sprintf("INSERT INTO %s VALUES (%s)", dataSource.Name, strings.Join(params, ",")))
+		stmt, err := dest.Prepare(fmt.Sprintf("INSERT INTO %s VALUES (%s)", dataSource.ID, strings.Join(params, ",")))
 		if err != nil {
 			return err
 		}

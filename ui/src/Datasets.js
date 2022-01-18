@@ -34,9 +34,9 @@ export function Datasets() {
   for (i in datasets) {
     datasetElems.push(
       html`<tr>
-        <td>${datasets[i].Name}</td>
+        <td>${datasets[i].ID}</td>
         <td><pre>${datasets[i].Text}</pre></td>
-        <td><a href="/app/datasets/${datasets[i].Name}/preview">Preview</a></td>
+        <td><a href="/app/datasets/${datasets[i].ID}/preview">Preview</a></td>
       </tr>`
     );
   }
@@ -44,7 +44,7 @@ export function Datasets() {
     <table class="pure-table">
       <thead>
         <tr>
-          <th>Name</th>
+          <th>ID</th>
           <th>Text</th>
           <th>Preview</th>
         </tr>
@@ -59,7 +59,7 @@ export function DatasetPreview(props) {
   const [error, setError] = useState();
 
   useEffect(() => {
-    fetch(`/api/datasets/${props.datasetName}/preview`)
+    fetch(`/api/datasets/${props.datasetID}/preview`)
       .then((response) => {
         if (response.ok) {
           return response.json();
@@ -104,7 +104,7 @@ export function DatasetPreview(props) {
     <div class="cj-breadcrumb">
       <a href="/app/datasets">Datasets</a>
       <span> / </span>
-      ${props.datasetName}
+      ${props.datasetID}
       <span> / </span>
       Preview
     </div>

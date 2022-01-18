@@ -161,7 +161,15 @@ export function WorkflowRunTasks(props) {
         <td>${task.started_at}</td>
         <td>${task.completed_at}</td>
         <td>
+          <pre style="width: 15em; max-height: 15em; overflow: scroll;">
+${JSON.stringify(task.output, 0, 2)}</pre
+          >
+        </td>
+        <td>
           <pre style="width: 15em; overflow: scroll;">${task.stdout}</pre>
+        </td>
+        <td>
+          <pre style="width: 15em; overflow: scroll;">${task.stderr}</pre>
         </td>
         <td>${task.success ? "✅" : "❌"}</td>
       </tr>`
@@ -181,7 +189,9 @@ export function WorkflowRunTasks(props) {
           <th>ID</th>
           <th>Started</th>
           <th>Completed</th>
+          <th>Output</th>
           <th>Stdout</th>
+          <th>Stderr</th>
           <th>Success</th>
         </tr>
       </thead>

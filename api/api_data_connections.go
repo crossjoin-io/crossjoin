@@ -7,7 +7,7 @@ import (
 )
 
 func (api *API) getDataConnections(_ http.ResponseWriter, r *http.Request) Response {
-	rows, err := api.db.Query("SELECT name, type, path, connection_string FROM data_connections")
+	rows, err := api.db.Query("SELECT id, type, path, connection_string FROM data_connections")
 	if err != nil {
 		return Response{
 			Status: http.StatusInternalServerError,
@@ -18,7 +18,7 @@ func (api *API) getDataConnections(_ http.ResponseWriter, r *http.Request) Respo
 	connections := []config.DataConnection{}
 	for rows.Next() {
 		connection := config.DataConnection{}
-		err = rows.Scan(&connection.Name, &connection.Type, &connection.Path, &connection.ConnectionString)
+		err = rows.Scan(&connection.ID, &connection.Type, &connection.Path, &connection.ConnectionString)
 		if err != nil {
 			return Response{
 				Status: http.StatusInternalServerError,

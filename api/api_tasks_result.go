@@ -61,6 +61,23 @@ func (api *API) postTasksResult(_ http.ResponseWriter, r *http.Request) Response
 			Error:  err.Error(),
 		}
 	}
+
+	// If the task wasn't a success, fail the workflow run.
+	if !result.OK {
+		err = api.CompleteWorkflowRun(workflowRunID, false)
+		if err != nil {
+			log.Println(err)
+			return Response{
+				OK:     false,
+				Status: http.StatusInternalServerError,
+				Error:  err.Error(),
+			}
+		}
+		return Response{
+			OK: true,
+		}
+	}
+
 	workflow, err := api.GetWorkflow(workflowID)
 	if err != nil {
 		log.Println(err)

@@ -33,7 +33,7 @@ function App() {
           <${Home} path="/app/" />
           <${Connections} path="/app/connections" />
           <${Datasets} path="/app/datasets" />
-          <${DatasetPreview} path="/app/datasets/:datasetName/preview" />
+          <${DatasetPreview} path="/app/datasets/:datasetID/preview" />
           <${Workflows} path="/app/workflows" />
           <${WorkflowRuns} path="/app/workflows/:workflowID/runs" />
           <${WorkflowRunTasks} path="/app/workflows/:workflowID/runs/:workflowRunID/tasks" />

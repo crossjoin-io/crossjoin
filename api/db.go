@@ -28,13 +28,13 @@ func setupDatabase(db *sql.DB) error {
 			success BOOL
 		);
 		CREATE TABLE IF NOT EXISTS data_connections (
-			name TEXT NOT NULL PRIMARY KEY,
+			id TEXT NOT NULL PRIMARY KEY,
 			type TEXT NOT NULL,
 			path TEXT,
 			connection_string TEXT
 		);
 		CREATE TABLE IF NOT EXISTS datasets (
-			name TEXT NOT NULL PRIMARY KEY,
+			id TEXT NOT NULL PRIMARY KEY,
 			text TEXT NOT NULL
 		)
 		`,
