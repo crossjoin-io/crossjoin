@@ -28,7 +28,10 @@ func (api *API) getStatusSummary(_ http.ResponseWriter, r *http.Request) Respons
 			Error:  err.Error(),
 		}
 	}
-	rows, err := api.db.Query(`SELECT
+	runs := []SummaryTaskRun{}
+	failures := []SummaryTaskRun{}
+
+	recentRunsRows, err := api.db.Query(`SELECT
 			id,
 			(SELECT workflow_id FROM workflow_runs WHERE id = workflow_run_id) AS workflow_id,
 			workflow_run_id,
@@ -45,11 +48,10 @@ func (api *API) getStatusSummary(_ http.ResponseWriter, r *http.Request) Respons
 			Error:  err.Error(),
 		}
 	}
-	defer rows.Close()
-	runs := []SummaryTaskRun{}
-	for rows.Next() {
+	defer recentRunsRows.Close()
+	for recentRunsRows.Next() {
 		run := SummaryTaskRun{}
-		err = rows.Scan(&run.ID, &run.WorkflowID, &run.WorkflowRunID, &run.WorkflowTaskID,
+		err = recentRunsRows.Scan(&run.ID, &run.WorkflowID, &run.WorkflowRunID, &run.WorkflowTaskID,
 			&run.CreatedAt, &run.StartedAt, &run.CompletedAt, &run.Success)
 		if err != nil {
 			log.Println(err)
@@ -60,9 +62,43 @@ func (api *API) getStatusSummary(_ http.ResponseWriter, r *http.Request) Respons
 		}
 		runs = append(runs, run)
 	}
+
+	recentFailuresRows, err := api.db.Query(`SELECT
+			id,
+			(SELECT workflow_id FROM workflow_runs WHERE id = workflow_run_id) AS workflow_id,
+			workflow_run_id,
+			workflow_task_id,
+			created_at,
+			started_at,
+			completed_at,
+			success
+		FROM tasks WHERE success = 0 ORDER BY COALESCE(completed_at, started_at) DESC LIMIT 10`)
+	if err != nil {
+		log.Println(err)
+		return Response{
+			Status: http.StatusInternalServerError,
+			Error:  err.Error(),
+		}
+	}
+	defer recentFailuresRows.Close()
+	for recentFailuresRows.Next() {
+		run := SummaryTaskRun{}
+		err = recentFailuresRows.Scan(&run.ID, &run.WorkflowID, &run.WorkflowRunID, &run.WorkflowTaskID,
+			&run.CreatedAt, &run.StartedAt, &run.CompletedAt, &run.Success)
+		if err != nil {
+			log.Println(err)
+			return Response{
+				Status: http.StatusInternalServerError,
+				Error:  err.Error(),
+			}
+		}
+		failures = append(failures, run)
+	}
+
 	return Response{
 		Response: StatusSummary{
-			RecentTasksRuns:     runs,
+			RecentTaskRuns:      runs,
+			RecentTaskFailures:  failures,
 			TotalConnections:    totalConnections,
 			TotalDatasets:       totalDatasets,
 			TotalWorkflows:      totalWorkflows,

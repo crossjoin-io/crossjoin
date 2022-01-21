@@ -4,6 +4,7 @@ import { useState, useEffect } from "preact/hooks";
 import { Connections } from "./Connections";
 import { Datasets, DatasetPreview } from "./Datasets";
 import { Workflows, WorkflowRuns, WorkflowRunTasks } from "./Workflows";
+import { Spinner } from "./components/Spinner";
 import "./App.css";
 import "./Dashboard.css";
 
@@ -43,8 +44,32 @@ function Dashboard() {
       ? html`<i class="cj-green fas fa-check"></i>`
       : run.completed_at
       ? html`<i class="fas fa-times"></i>`
-      : html`<i class="fas fa-hourglass"></i>`;
+      : html`<${Spinner} />`;
     runs.push(
+      html`<tr>
+        <td>${run.workflow_id}</td>
+        <td>
+          <a
+            href="/app/workflows/${run.workflow_id}/runs/${run.workflow_run_id}/tasks"
+            >${run.workflow_task_id}</a
+          >
+        </td>
+        <td>${run.started_at}</td>
+        <td>${run.completed_at}</td>
+        <td>${statusIcon}</td>
+      </tr>`
+    );
+  }
+
+  let failures = [];
+  for (i in summary.recent_task_failures) {
+    const run = summary.recent_task_failures[i];
+    let statusIcon = run.success
+      ? html`<i class="cj-green fas fa-check"></i>`
+      : run.completed_at
+      ? html`<i class="fas fa-times"></i>`
+      : html`<${Spinner} />`;
+    failures.push(
       html`<tr>
         <td>${run.workflow_id}</td>
         <td>
@@ -81,7 +106,7 @@ function Dashboard() {
       </div>
     </div>
     <h3>Recent tasks</h3>
-    <table class="pure-table">
+    <table class="pure-table pure-table-horizontal">
       <thead>
         <tr>
           <th>Workflow</th>
@@ -92,6 +117,20 @@ function Dashboard() {
         </tr>
       </thead>
       ${runs}
+    </table>
+
+    <h3>Recent failures</h3>
+    <table class="pure-table pure-table-horizontal">
+      <thead>
+        <tr>
+          <th>Workflow</th>
+          <th>Task</th>
+          <th>Started</th>
+          <th>Completed</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      ${failures}
     </table>`;
 }
 

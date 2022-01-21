@@ -54,7 +54,8 @@ type DataConnection struct {
 }
 
 type StatusSummary struct {
-	RecentTasksRuns     []SummaryTaskRun `json:"recent_task_runs"`
+	RecentTaskRuns      []SummaryTaskRun `json:"recent_task_runs"`
+	RecentTaskFailures  []SummaryTaskRun `json:"recent_task_failures"`
 	TotalConnections    int              `json:"total_connections"`
 	TotalDatasets       int              `json:"total_datasets"`
 	TotalWorkflows      int              `json:"total_workflows"`

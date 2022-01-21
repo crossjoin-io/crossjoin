@@ -1,6 +1,9 @@
 import { useState, useEffect } from "preact/hooks";
 import { html } from "htm/preact";
 
+import { Spinner } from "./components/Spinner";
+import { GreenCheckMark } from "./components/CheckMark";
+
 export function Workflows() {
   const [workflows, setWorkflows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +44,7 @@ export function Workflows() {
     );
   }
   return html`<h1>Workflows</h1>
-    <table class="pure-table">
+    <table class="pure-table pure-table-horizontal">
       <thead>
         <tr>
           <th>ID</th>
@@ -92,10 +95,10 @@ export function WorkflowRuns(props) {
   for (i in workflowRuns) {
     const run = workflowRuns[i];
     let statusIcon = run.success
-      ? html`<i class="cj-green fas fa-check"></i>`
+      ? html`<${GreenCheckMark} />`
       : run.completed_at
       ? html`<i class="fas fa-times"></i>`
-      : html`<i class="fas fa-hourglass"></i>`;
+      : html`<${Spinner} />`;
     runs.push(
       html`<tr>
         <td>${run.id}</td>
@@ -118,7 +121,7 @@ export function WorkflowRuns(props) {
       <span> / </span>
       Runs
     </div>
-    <table class="pure-table">
+    <table class="pure-table pure-table-horizontal">
       <thead>
         <tr>
           <th>ID</th>
@@ -170,7 +173,7 @@ export function WorkflowRunTasks(props) {
       ? html`<i class="cj-green fas fa-check"></i>`
       : task.completed_at
       ? html`<i class="fas fa-times"></i>`
-      : html`<i class="fas fa-hourglass"></i>`;
+      : html`<${Spinner} />`;
     tasks.push(
       html`<tr>
         <td>${task.workflow_task_id}</td>
@@ -199,7 +202,7 @@ ${JSON.stringify(task.output, 0, 2)}</pre
       <span> / </span>
       Tasks
     </div>
-    <table class="pure-table">
+    <table class="pure-table pure-table-horizontal">
       <thead>
         <tr>
           <th>ID</th>

@@ -42,7 +42,7 @@ export function Connections() {
     );
   }
   return html`<h1>Connections</h1>
-    <table class="pure-table">
+    <table class="pure-table pure-table-horizontal">
       <thead>
         <tr>
           <th>Name</th>

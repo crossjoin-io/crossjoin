@@ -42,7 +42,7 @@ export function Datasets() {
     );
   }
   return html`<h1>Datasets</h1>
-    <table class="pure-table">
+    <table class="pure-table pure-table-horizontal">
       <thead>
         <tr>
           <th>ID</th>
@@ -110,7 +110,7 @@ export function DatasetPreview(props) {
       Preview
     </div>
     <div class="cj-dataset-preview">
-      <table class="pure-table">
+      <table class="pure-table pure-table-horizontal">
         <thead>
           <tr>
             ${columns}
