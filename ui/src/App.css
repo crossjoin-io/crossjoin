@@ -35,10 +35,6 @@ a {
   font-weight: bold;
 }
 
-.pure-table {
-  border-radius: 2em;
-}
-
 @media screen and (min-width: 38em) {
   /* Desktop */
   ul.pure-menu-list {
