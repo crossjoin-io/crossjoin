@@ -1,0 +1,17 @@
+.cj-spinner {
+  height: 10px;
+  width: 10px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  border-left-color: #000;
+  animation: cj-spinner-spin 0.75s linear infinite;
+}
+
+@keyframes cj-spinner-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

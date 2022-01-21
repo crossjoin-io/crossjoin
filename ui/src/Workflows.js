@@ -1,6 +1,9 @@
 import { useState, useEffect } from "preact/hooks";
 import { html } from "htm/preact";
 
+import { Spinner } from "./components/Spinner";
+import { GreenCheckMark } from "./components/CheckMark";
+
 export function Workflows() {
   const [workflows, setWorkflows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +44,7 @@ export function Workflows() {
     );
   }
   return html`<h1>Workflows</h1>
-    <table class="pure-table">
+    <table class="pure-table pure-table-horizontal">
       <thead>
         <tr>
           <th>ID</th>
@@ -83,8 +86,19 @@ export function WorkflowRuns(props) {
   }
 
   let runs = [];
+  workflowRuns.sort((a, b) => {
+    if (a.started_at < b.started_at) {
+      return 1;
+    }
+    return -1;
+  });
   for (i in workflowRuns) {
     const run = workflowRuns[i];
+    let statusIcon = run.success
+      ? html`<${GreenCheckMark} />`
+      : run.completed_at
+      ? html`<i class="fas fa-times"></i>`
+      : html`<${Spinner} />`;
     runs.push(
       html`<tr>
         <td>${run.id}</td>
@@ -95,7 +109,7 @@ export function WorkflowRuns(props) {
         </td>
         <td>${run.started_at}</td>
         <td>${run.completed_at}</td>
-        <td>${run.success ? "✅" : "❌"}</td>
+        <td>${statusIcon}</td>
       </tr>`
     );
   }
@@ -107,14 +121,14 @@ export function WorkflowRuns(props) {
       <span> / </span>
       Runs
     </div>
-    <table class="pure-table">
+    <table class="pure-table pure-table-horizontal">
       <thead>
         <tr>
           <th>ID</th>
           <th>Tasks</th>
           <th>Started</th>
           <th>Completed</th>
-          <th>Success</th>
+          <th>Status</th>
         </tr>
       </thead>
       ${runs}
@@ -155,6 +169,11 @@ export function WorkflowRunTasks(props) {
   let tasks = [];
   for (i in workflowTasks) {
     const task = workflowTasks[i];
+    let statusIcon = task.success
+      ? html`<i class="cj-green fas fa-check"></i>`
+      : task.completed_at
+      ? html`<i class="fas fa-times"></i>`
+      : html`<${Spinner} />`;
     tasks.push(
       html`<tr>
         <td>${task.workflow_task_id}</td>
@@ -171,7 +190,7 @@ ${JSON.stringify(task.output, 0, 2)}</pre
         <td>
           <pre style="width: 15em; overflow: scroll;">${task.stderr}</pre>
         </td>
-        <td>${task.success ? "✅" : "❌"}</td>
+        <td>${statusIcon}</td>
       </tr>`
     );
   }
@@ -183,7 +202,7 @@ ${JSON.stringify(task.output, 0, 2)}</pre
       <span> / </span>
       Tasks
     </div>
-    <table class="pure-table">
+    <table class="pure-table pure-table-horizontal">
       <thead>
         <tr>
           <th>ID</th>
@@ -192,7 +211,7 @@ ${JSON.stringify(task.output, 0, 2)}</pre
           <th>Output</th>
           <th>Stdout</th>
           <th>Stderr</th>
-          <th>Success</th>
+          <th>Status</th>
         </tr>
       </thead>
       ${tasks}

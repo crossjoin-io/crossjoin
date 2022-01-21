@@ -53,6 +53,26 @@ type DataConnection struct {
 	ConnectionString string `json:"connection_string"`
 }
 
+type StatusSummary struct {
+	RecentTaskRuns      []SummaryTaskRun `json:"recent_task_runs"`
+	RecentTaskFailures  []SummaryTaskRun `json:"recent_task_failures"`
+	TotalConnections    int              `json:"total_connections"`
+	TotalDatasets       int              `json:"total_datasets"`
+	TotalWorkflows      int              `json:"total_workflows"`
+	TotalTasksCompleted int              `json:"total_tasks_completed"`
+}
+
+type SummaryTaskRun struct {
+	ID             string     `json:"id"`
+	WorkflowID     string     `json:"workflow_id"`
+	WorkflowRunID  string     `json:"workflow_run_id"`
+	WorkflowTaskID string     `json:"workflow_task_id"`
+	CreatedAt      time.Time  `json:"created_at"`
+	StartedAt      *time.Time `json:"started_at"`
+	CompletedAt    *time.Time `json:"completed_at"`
+	Success        *bool      `json:"success"`
+}
+
 type Response struct {
 	OK       bool        `json:"ok"`
 	Status   int         `json:"-"`

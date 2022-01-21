@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/crossjoin-io/crossjoin/api"
@@ -112,6 +113,20 @@ func (run *Runner) downloadDataset(dataset string, destinationDirectory string) 
 }
 
 func (run *Runner) runTaskContainer(t *api.Task) (*api.TaskResult, error) {
+	// Check the env params
+	// TODO: make this safer
+	for _, v := range t.Env {
+		expanded := os.ExpandEnv(v)
+		// Quoted
+		if (expanded[0] == '\'' && expanded[len(expanded)-1] == '\'') ||
+			(expanded[0] == '"' && expanded[len(expanded)-1] == '"') {
+			continue
+		}
+		if strings.ContainsAny(expanded, "\t ") {
+			return nil, fmt.Errorf("env %s is not supported because it has spaces", v)
+		}
+	}
+
 	dir, err := os.MkdirTemp("", "crossjoin_runner_*")
 	if err != nil {
 		log.Println(err)
@@ -148,6 +163,7 @@ func (run *Runner) runTaskContainer(t *api.Task) (*api.TaskResult, error) {
 		}
 	}
 	for k, v := range t.Env {
+		v = os.ExpandEnv(v)
 		args = append(args, "-e", fmt.Sprintf("%s=%s", k, v))
 	}
 	args = append(args, t.Image)
