@@ -77,6 +77,7 @@ func (api *API) Handler() http.Handler {
 	api.handle("GET", "/api/datasets", api.getDatasets)
 	api.handle("GET", "/api/datasets/{dataset_name}/preview", api.getDatasetPreview)
 	api.handle("GET", "/api/datasets/{dataset_name}/download", api.getDatasetDownload)
+	api.handle("GET", "/api/status/summary", api.getStatusSummary)
 	api.handle("GET", "/api/workflows", api.getWorkflows)
 	api.handle("GET", "/api/workflows/{workflow_id}/runs", api.getWorkflowRuns)
 	api.handle("GET", "/api/workflows/{workflow_id}/runs/{workflow_run_id}/tasks", api.getWorkflowRunTasks)

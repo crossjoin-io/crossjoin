@@ -8,7 +8,7 @@ data_connections:
 datasets:
   - id: orders_and_returns
     refresh:
-      interval: 30s
+      interval: 30m
     data_source:
       id: orders
       data_connection: orders
@@ -22,14 +22,14 @@ datasets:
           data_connection: returns
 workflows:
   - id: my-workflow
-    start: say_hi
+    start: load_and_format_orders
     on:
       dataset_refresh:
         - orders_and_returns
     tasks:
-      say_hi:
+      load_and_format_orders:
         type: container
-        next: print_10_rows
+        next: print_orders
         image: alpine
         with:
           baz: baz
@@ -39,7 +39,7 @@ workflows:
           echo hi
           mv /runner/in.json /runner/out.json
           ls /runner
-      print_10_rows:
+      print_orders:
         type: container
         with_datasets:
           - orders_and_returns

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "preact/hooks";
 import { html } from "htm/preact";
+import "./Datasets.css";
 
 export function Datasets() {
   const [datasets, setDatasets] = useState([]);
@@ -108,12 +109,14 @@ export function DatasetPreview(props) {
       <span> / </span>
       Preview
     </div>
-    <table class="pure-table">
-      <thead>
-        <tr>
-          ${columns}
-        </tr>
-      </thead>
-      ${rows}
-    </table>`;
+    <div class="cj-dataset-preview">
+      <table class="pure-table">
+        <thead>
+          <tr>
+            ${columns}
+          </tr>
+        </thead>
+        ${rows}
+      </table>
+    </div>`;
 }

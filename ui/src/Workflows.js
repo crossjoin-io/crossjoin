@@ -83,8 +83,19 @@ export function WorkflowRuns(props) {
   }
 
   let runs = [];
+  workflowRuns.sort((a, b) => {
+    if (a.started_at < b.started_at) {
+      return 1;
+    }
+    return -1;
+  });
   for (i in workflowRuns) {
     const run = workflowRuns[i];
+    let statusIcon = run.success
+      ? html`<i class="cj-green fas fa-check"></i>`
+      : run.completed_at
+      ? html`<i class="fas fa-times"></i>`
+      : html`<i class="fas fa-hourglass"></i>`;
     runs.push(
       html`<tr>
         <td>${run.id}</td>
@@ -95,7 +106,7 @@ export function WorkflowRuns(props) {
         </td>
         <td>${run.started_at}</td>
         <td>${run.completed_at}</td>
-        <td>${run.success ? "✅" : "❌"}</td>
+        <td>${statusIcon}</td>
       </tr>`
     );
   }
@@ -114,7 +125,7 @@ export function WorkflowRuns(props) {
           <th>Tasks</th>
           <th>Started</th>
           <th>Completed</th>
-          <th>Success</th>
+          <th>Status</th>
         </tr>
       </thead>
       ${runs}
@@ -155,6 +166,11 @@ export function WorkflowRunTasks(props) {
   let tasks = [];
   for (i in workflowTasks) {
     const task = workflowTasks[i];
+    let statusIcon = task.success
+      ? html`<i class="cj-green fas fa-check"></i>`
+      : task.completed_at
+      ? html`<i class="fas fa-times"></i>`
+      : html`<i class="fas fa-hourglass"></i>`;
     tasks.push(
       html`<tr>
         <td>${task.workflow_task_id}</td>
@@ -171,7 +187,7 @@ ${JSON.stringify(task.output, 0, 2)}</pre
         <td>
           <pre style="width: 15em; overflow: scroll;">${task.stderr}</pre>
         </td>
-        <td>${task.success ? "✅" : "❌"}</td>
+        <td>${statusIcon}</td>
       </tr>`
     );
   }
@@ -192,7 +208,7 @@ ${JSON.stringify(task.output, 0, 2)}</pre
           <th>Output</th>
           <th>Stdout</th>
           <th>Stderr</th>
-          <th>Success</th>
+          <th>Status</th>
         </tr>
       </thead>
       ${tasks}
