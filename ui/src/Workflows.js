@@ -4,6 +4,8 @@ import { html } from "htm/preact";
 import { Spinner } from "./components/Spinner";
 import { GreenCheckMark } from "./components/CheckMark";
 
+import "./Workflows.css";
+
 export function Workflows() {
   const [workflows, setWorkflows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +39,7 @@ export function Workflows() {
   for (id in workflows) {
     workflowElems.push(
       html`<tr>
-        <td>${workflows[id].id}</td>
+        <td><a href="/app/workflows/${id}">${workflows[id].id}</a></td>
         <td>${Object.keys(workflows[id].tasks || {}).length} tasks</td>
         <td><a href="/app/workflows/${id}/runs">Runs</a></td>
       </tr>`
@@ -54,6 +56,60 @@ export function Workflows() {
       </thead>
       ${workflowElems}
     </table>`;
+}
+
+export function WorkflowDetails(props) {
+  const [workflowDetails, setWorkflowDetails] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState();
+
+  useEffect(() => {
+    fetch(`/api/workflows/${props.workflowID}`)
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        }
+      })
+      .then((data) => {
+        setLoading(false);
+        setWorkflowDetails(data.response);
+      })
+      .catch((e) => {
+        setLoading(false);
+        setError(e.toString());
+      });
+  }, []);
+
+  if (loading) {
+    return html`Loading...`;
+  }
+  if (error) {
+    return html`Error: ${error}`;
+  }
+
+  let steps = [];
+  let currentTask = workflowDetails.start;
+  while (currentTask) {
+    if (steps.length > 0) {
+      steps.push(html`<div class="cj-workflow-task-arrow">↓</div>`);
+    }
+    const t = workflowDetails.tasks[currentTask];
+    steps.push(html`<div class="cj-workflow-task">
+      <div class="cj-workflow-task-id">${currentTask}</div>
+      <div class="cj-workflow-task-image">${t.image}</div>
+      <div class="cj-workflow-task-script">${t.script}</div>
+    </div>`);
+    currentTask = t.next;
+  }
+
+  return html`<h1>${props.workflowID}</h1>
+    <div class="cj-breadcrumb">
+      <a href="/app/workflows">Workflows</a>
+      <span> / </span>
+      ${props.workflowID}
+    </div>
+
+    <div>${steps}</div> `;
 }
 
 export function WorkflowRuns(props) {
@@ -117,7 +173,7 @@ export function WorkflowRuns(props) {
     <div class="cj-breadcrumb">
       <a href="/app/workflows">Workflows</a>
       <span> / </span>
-      ${props.workflowID}
+      <a href="/app/workflows/${props.workflowID}">${props.workflowID}</a>
       <span> / </span>
       Runs
     </div>
@@ -198,7 +254,11 @@ ${JSON.stringify(task.output, 0, 2)}</pre
     <div class="cj-breadcrumb">
       <a href="/app/workflows">Workflows</a>
       <span> / </span>
-      <a href="/app/workflows/${props.workflowID}/runs">${props.workflowID}</a>
+      <a href="/app/workflows/${props.workflowID}">${props.workflowID}</a>
+      <span> / </span>
+      <a href="/app/workflows/${props.workflowID}/runs">Runs</a>
+      <span> / </span>
+      <span> ${props.workflowRunID} </span>
       <span> / </span>
       Tasks
     </div>

@@ -117,6 +117,9 @@ func (run *Runner) runTaskContainer(t *api.Task) (*api.TaskResult, error) {
 	// TODO: make this safer
 	for _, v := range t.Env {
 		expanded := os.ExpandEnv(v)
+		if len(expanded) == 0 {
+			continue
+		}
 		// Quoted
 		if (expanded[0] == '\'' && expanded[len(expanded)-1] == '\'') ||
 			(expanded[0] == '"' && expanded[len(expanded)-1] == '"') {

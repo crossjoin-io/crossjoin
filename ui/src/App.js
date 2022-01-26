@@ -3,7 +3,12 @@ import { html } from "htm/preact";
 import { useState, useEffect } from "preact/hooks";
 import { Connections } from "./Connections";
 import { Datasets, DatasetPreview } from "./Datasets";
-import { Workflows, WorkflowRuns, WorkflowRunTasks } from "./Workflows";
+import {
+  Workflows,
+  WorkflowDetails,
+  WorkflowRuns,
+  WorkflowRunTasks,
+} from "./Workflows";
 import { Spinner } from "./components/Spinner";
 import "./App.css";
 import "./Dashboard.css";
@@ -160,6 +165,7 @@ function App() {
           <${Datasets} path="/app/datasets" />
           <${DatasetPreview} path="/app/datasets/:datasetID/preview" />
           <${Workflows} path="/app/workflows" />
+          <${WorkflowDetails} path="/app/workflows/:workflowID" />
           <${WorkflowRuns} path="/app/workflows/:workflowID/runs" />
           <${WorkflowRunTasks} path="/app/workflows/:workflowID/runs/:workflowRunID/tasks" />
         </${Router}>

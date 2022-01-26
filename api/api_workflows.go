@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/crossjoin-io/crossjoin/config"
+	"github.com/gorilla/mux"
 )
 
 func (api *API) getWorkflows(_ http.ResponseWriter, r *http.Request) Response {
@@ -37,5 +38,33 @@ func (api *API) getWorkflows(_ http.ResponseWriter, r *http.Request) Response {
 	}
 	return Response{
 		Response: workflows,
+	}
+}
+
+func (api *API) getWorkflow(_ http.ResponseWriter, r *http.Request) Response {
+	vars := mux.Vars(r)
+	workflowID := vars["workflow_id"]
+
+	text := ""
+	err := api.db.QueryRow("SELECT text FROM workflows WHERE id = $1", workflowID).Scan(&text)
+	if err != nil {
+		return Response{
+			Status: http.StatusInternalServerError,
+			Error:  err.Error(),
+		}
+	}
+
+	workflow := config.Workflow{
+		ID: workflowID,
+	}
+	err = workflow.Parse([]byte(text))
+	if err != nil {
+		return Response{
+			Status: http.StatusInternalServerError,
+			Error:  err.Error(),
+		}
+	}
+	return Response{
+		Response: workflow,
 	}
 }
