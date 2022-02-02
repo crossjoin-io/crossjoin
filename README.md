@@ -6,7 +6,8 @@ Workflows are defined as YAML (like GitHub Actions) and are executed by runners.
 You can run everything in a single Crossjoin instance, or have 1 server and multiple
 runners.
 
-![Screencap](https://crossjoin.io/crossjoin.gif)
+![Screenshot](https://user-images.githubusercontent.com/379404/152108787-840e0bb3-94ca-4069-8f7f-1409fac5ddd9.png)
+
 
 ## Status
 
