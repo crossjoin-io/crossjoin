@@ -1,0 +1,17 @@
+.cj-card {
+  margin: 1em 0;
+  padding: 1em;
+  border-radius: 10px;
+  background: white;
+  border: 1px solid #eee;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+}
+
+.cj-card-header {
+  margin: 0 0 1em 0;
+  color: #666;
+  text-transform: uppercase;
+  font-weight: 500;
+  font-size: 0.9em;
+}

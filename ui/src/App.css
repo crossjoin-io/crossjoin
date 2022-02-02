@@ -9,6 +9,7 @@ html {
 }
 
 body {
+  background-color: #fafafa;
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
 }
@@ -19,15 +20,24 @@ a {
 
 .cj-container {
   margin: 0 auto;
-  max-width: 58rem;
+  width: 80em;
+  max-width: 90%;
 }
 
 .cj-nav {
-  border-bottom: 1px solid #eee;
+  background-color: #0075ed;
 }
 
 .cj-nav a {
-  color: black;
+  color: white;
+}
+
+.cj-nav .pure-menu-link:hover {
+  background-color: #005ebb;
+}
+
+.cj-nav .pure-menu-link:focus {
+  background-color: inherit;
 }
 
 .pure-menu-heading {

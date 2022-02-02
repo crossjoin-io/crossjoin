@@ -59,6 +59,9 @@ func NewAPI(db *sql.DB, conf *config.Config, dataDir string) (*API, error) {
 func (api *API) Handler() http.Handler {
 	baseMux := http.NewServeMux()
 	baseMux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			http.Redirect(w, r, "/app", 301)
+		}
 		if strings.HasPrefix(r.URL.Path, "/app") {
 			r.URL.Path = "/"
 		}

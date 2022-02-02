@@ -1,3 +1,4 @@
 .cj-dataset-preview {
   max-height: 40em;
+  overflow: scroll;
 }

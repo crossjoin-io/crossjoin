@@ -5,6 +5,7 @@ import { Spinner } from "./components/Spinner";
 import { GreenCheckMark } from "./components/CheckMark";
 
 import "./Workflows.css";
+import { Card } from "./components/Card";
 
 export function Workflows() {
   const [workflows, setWorkflows] = useState([]);
@@ -45,7 +46,7 @@ export function Workflows() {
       </tr>`
     );
   }
-  return html`<h1>Workflows</h1>
+  return html`<${Card} header="Workflows">
     <table class="pure-table pure-table-horizontal">
       <thead>
         <tr>
@@ -55,7 +56,8 @@ export function Workflows() {
         </tr>
       </thead>
       ${workflowElems}
-    </table>`;
+    </table></${Card}
+  >`;
 }
 
 export function WorkflowDetails(props) {
@@ -102,14 +104,18 @@ export function WorkflowDetails(props) {
     currentTask = t.next;
   }
 
-  return html`<h1>${props.workflowID}</h1>
-    <div class="cj-breadcrumb">
-      <a href="/app/workflows">Workflows</a>
-      <span> / </span>
-      ${props.workflowID}
-    </div>
+  return html`
+    <${Card} header="Workflows">
+      <h1>${props.workflowID}</h1>
+      <div class="cj-breadcrumb">
+        <a href="/app/workflows">Workflows</a>
+        <span> / </span>
+        ${props.workflowID}
+      </div>
 
-    <div>${steps}</div> `;
+      <div>${steps}</div>
+    </${Card}>
+  `;
 }
 
 export function WorkflowRuns(props) {
@@ -169,7 +175,8 @@ export function WorkflowRuns(props) {
       </tr>`
     );
   }
-  return html`<h1>Workflows</h1>
+  return html`
+  <${Card} header="Workflows">
     <div class="cj-breadcrumb">
       <a href="/app/workflows">Workflows</a>
       <span> / </span>
@@ -188,7 +195,8 @@ export function WorkflowRuns(props) {
         </tr>
       </thead>
       ${runs}
-    </table>`;
+    </table></${Card}
+  >`;
 }
 
 export function WorkflowRunTasks(props) {
@@ -250,7 +258,7 @@ ${JSON.stringify(task.output, 0, 2)}</pre
       </tr>`
     );
   }
-  return html`<h1>Workflows</h1>
+  return html`<${Card} header="Workflows">
     <div class="cj-breadcrumb">
       <a href="/app/workflows">Workflows</a>
       <span> / </span>
@@ -275,5 +283,6 @@ ${JSON.stringify(task.output, 0, 2)}</pre
         </tr>
       </thead>
       ${tasks}
-    </table>`;
+    </table></${Card}
+  >`;
 }

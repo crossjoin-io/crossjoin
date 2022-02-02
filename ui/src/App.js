@@ -12,6 +12,7 @@ import {
 import { Spinner } from "./components/Spinner";
 import "./App.css";
 import "./Dashboard.css";
+import { Card } from "./components/Card";
 
 function Dashboard() {
   const [summary, setSummary] = useState({});
@@ -89,7 +90,8 @@ function Dashboard() {
       </tr>`
     );
   }
-  return html`<h1>Dashboard</h1>
+  return html`
+    <${Card} header="Summary">
     <div class="pure-g cj-summary-counts">
       <div class="pure-u-1-4 cj-summary-count-box">
         <div class="cj-summary-count-stat">${summary.total_connections}</div>
@@ -110,21 +112,24 @@ function Dashboard() {
         ${" "} task${summary.total_tasks_completed > 1 ? "s" : ""} completed
       </div>
     </div>
-    <h3>Recent tasks</h3>
-    <table class="pure-table pure-table-horizontal">
-      <thead>
-        <tr>
-          <th>Workflow</th>
-          <th>Task</th>
-          <th>Started</th>
-          <th>Completed</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      ${runs}
-    </table>
+    </${Card}>
 
-    <h3>Recent failures</h3>
+    <${Card} header="Recent tasks">
+      <table class="pure-table pure-table-horizontal">
+        <thead>
+          <tr>
+            <th>Workflow</th>
+            <th>Task</th>
+            <th>Started</th>
+            <th>Completed</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        ${runs}
+      </table>
+    </${Card}>
+
+    <${Card} header="Recent failures">
     <table class="pure-table pure-table-horizontal">
       <thead>
         <tr>
@@ -136,28 +141,43 @@ function Dashboard() {
         </tr>
       </thead>
       ${failures}
-    </table>`;
+    </table>
+    </${Card}>`;
+}
+
+function Nav() {
+  return html`
+    <div class="cj-nav">
+      <div class="pure-menu pure-menu-horizontal pure-menu-scrollable">
+        <a href="/app" class="pure-menu-heading pure-menu-link"
+          ><i class="fas fa-xmark"></i> Crossjoin</a
+        >
+        <ul class="pure-menu-list">
+          <li class="pure-menu-item">
+            <a href="/app/connections" class="pure-menu-link"
+              ><i class="fas fa-plug"></i> Connections</a
+            >
+          </li>
+          <li class="pure-menu-item">
+            <a href="/app/datasets" class="pure-menu-link"
+              ><i class="fas fa-table"></i> Datasets</a
+            >
+          </li>
+          <li class="pure-menu-item">
+            <a href="/app/workflows" class="pure-menu-link"
+              ><i class="fas fa-diagram-project"></i> Workflows</a
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+  `;
 }
 
 function App() {
   return html`
+    <${Nav} />
     <div class="cj-container">
-      <div class="cj-nav">
-        <div class="pure-menu pure-menu-horizontal pure-menu-scrollable">
-          <a href="/app" class="pure-menu-heading pure-menu-link">Crossjoin</a>
-          <ul class="pure-menu-list">
-            <li class="pure-menu-item">
-              <a href="/app/connections" class="pure-menu-link">Connections</a>
-            </li>
-            <li class="pure-menu-item">
-              <a href="/app/datasets" class="pure-menu-link">Datasets</a>
-            </li>
-            <li class="pure-menu-item">
-              <a href="/app/workflows" class="pure-menu-link">Workflows</a>
-            </li>
-          </ul>
-        </div>
-      </div>
       <div class="cj-content">
         <${Router}>
           <${Dashboard} path="/app/" />

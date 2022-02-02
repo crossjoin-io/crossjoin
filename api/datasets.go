@@ -54,7 +54,7 @@ func (api *API) PreviewDataset(id string) ([]interface{}, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT * FROM " + id + " LIMIT 50")
+	rows, err := db.Query("SELECT * FROM " + id + " LIMIT 25")
 	if err != nil {
 		return nil, err
 	}

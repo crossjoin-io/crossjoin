@@ -1,6 +1,7 @@
 import { useState, useEffect } from "preact/hooks";
 import { html } from "htm/preact";
 import "./Datasets.css";
+import { Card } from "./components/Card";
 
 export function Datasets() {
   const [datasets, setDatasets] = useState([]);
@@ -41,7 +42,8 @@ export function Datasets() {
       </tr>`
     );
   }
-  return html`<h1>Datasets</h1>
+  return html`
+  <${Card} header="Datasets">
     <table class="pure-table pure-table-horizontal">
       <thead>
         <tr>
@@ -51,7 +53,8 @@ export function Datasets() {
         </tr>
       </thead>
       ${datasetElems}
-    </table>`;
+    </table>
+  </${Card}>`;
 }
 
 export function DatasetPreview(props) {
@@ -101,7 +104,7 @@ export function DatasetPreview(props) {
       </tr>`
     );
   }
-  return html`<h1>Datasets</h1>
+  return html`<${Card} header="Datasets">
     <div class="cj-breadcrumb">
       <a href="/app/datasets">Datasets</a>
       <span> / </span>
@@ -118,5 +121,6 @@ export function DatasetPreview(props) {
         </thead>
         ${rows}
       </table>
-    </div>`;
+    </div></${Card}
+  >`;
 }
