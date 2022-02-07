@@ -13,6 +13,7 @@ import { Spinner } from "./components/Spinner";
 import "./App.css";
 import "./Dashboard.css";
 import { Card } from "./components/Card";
+import { TaskRun } from "./components/TaskRun";
 
 function Dashboard() {
   const [summary, setSummary] = useState({});
@@ -46,49 +47,13 @@ function Dashboard() {
   let runs = [];
   for (i in summary.recent_task_runs) {
     const run = summary.recent_task_runs[i];
-    let statusIcon = run.success
-      ? html`<i class="cj-green fas fa-check"></i>`
-      : run.completed_at
-      ? html`<i class="fas fa-times"></i>`
-      : html`<${Spinner} />`;
-    runs.push(
-      html`<tr>
-        <td>${run.workflow_id}</td>
-        <td>
-          <a
-            href="/app/workflows/${run.workflow_id}/runs/${run.workflow_run_id}/tasks"
-            >${run.workflow_task_id}</a
-          >
-        </td>
-        <td>${run.started_at}</td>
-        <td>${run.completed_at}</td>
-        <td>${statusIcon}</td>
-      </tr>`
-    );
+    runs.push(html`<${Card}> <${TaskRun} run=${run} /></${Card}>`);
   }
 
   let failures = [];
   for (i in summary.recent_task_failures) {
     const run = summary.recent_task_failures[i];
-    let statusIcon = run.success
-      ? html`<i class="cj-green fas fa-check"></i>`
-      : run.completed_at
-      ? html`<i class="fas fa-times"></i>`
-      : html`<${Spinner} />`;
-    failures.push(
-      html`<tr>
-        <td>${run.workflow_id}</td>
-        <td>
-          <a
-            href="/app/workflows/${run.workflow_id}/runs/${run.workflow_run_id}/tasks"
-            >${run.workflow_task_id}</a
-          >
-        </td>
-        <td>${run.started_at}</td>
-        <td>${run.completed_at}</td>
-        <td>${statusIcon}</td>
-      </tr>`
-    );
+    failures.push(html`<${Card}> <${TaskRun} run=${run} /></${Card}>`);
   }
   return html`
     <${Card} header="Summary">
@@ -114,35 +79,18 @@ function Dashboard() {
     </div>
     </${Card}>
 
-    <${Card} header="Recent tasks">
-      <table class="pure-table pure-table-horizontal">
-        <thead>
-          <tr>
-            <th>Workflow</th>
-            <th>Task</th>
-            <th>Started</th>
-            <th>Completed</th>
-            <th>Status</th>
-          </tr>
-        </thead>
+    <div class="pure-g">
+      <div class="pure-u-1 pure-u-md-1-2">
+      <${Card} header="Recent tasks">
         ${runs}
-      </table>
-    </${Card}>
-
-    <${Card} header="Recent failures">
-    <table class="pure-table pure-table-horizontal">
-      <thead>
-        <tr>
-          <th>Workflow</th>
-          <th>Task</th>
-          <th>Started</th>
-          <th>Completed</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      ${failures}
-    </table>
-    </${Card}>`;
+      </${Card}>
+      </div>
+      <div class="pure-u-1 pure-u-md-1-2">
+        <${Card} header="Recent failures">
+          ${failures}
+        </${Card}>
+      </div>
+    </div>`;
 }
 
 function Nav() {

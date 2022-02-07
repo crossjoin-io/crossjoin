@@ -1,0 +1,10 @@
+.cj-task-run-header {
+  line-height: 2;
+}
+
+.cj-task-run-detail-label {
+  line-height: 1.25em;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  color: #666;
+}

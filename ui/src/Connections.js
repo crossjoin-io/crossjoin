@@ -32,6 +32,7 @@ export function Connections() {
   }
 
   let connectionElems = [];
+  let connectionCards = [];
   for (i in connections) {
     let icon = "plug";
     switch (connections[i].type) {
@@ -42,27 +43,17 @@ export function Connections() {
         icon = "database";
         break;
     }
-    connectionElems.push(
-      html`<tr>
-        <td>${connections[i].id}</td>
-        <td><i class="fa fa-${icon}"></i> ${connections[i].type}</td>
-        <td>${connections[i].path}</td>
-        <td>${connections[i].connection_string}</td>
-      </tr>`
-    );
+    connectionCards.push(html`
+      <${Card} header=${connections[i].id}>
+        <div><i class="fa fa-${icon}"></i> ${connections[i].type}</div>
+        <div>Path: ${connections[i].path}</div>
+        <div>Connection string: ${connections[i].connection_string}</div>
+      </${Card}>
+    `);
   }
   return html`
-   <${Card} header="Connections">
-    <table class="pure-table pure-table-horizontal">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Type</th>
-          <th>Path</th>
-          <th>Connection string</th>
-        </tr>
-      </thead>
-      ${connectionElems}
-    </table>
-    </${Card}>`;
+    <${Card} header="Connections">
+      ${connectionCards}
+    </${Card}
+    `;
 }
