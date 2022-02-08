@@ -8,26 +8,26 @@ import (
 	"github.com/google/uuid"
 )
 
-func (api *API) StoreWorkflow(workflow config.Workflow) error {
-	_, err := api.db.Exec("REPLACE INTO workflows (id, text) VALUES ($1, $2)",
-		workflow.ID, workflow.String(),
+func (api *API) StoreWorkflow(hash string, workflow config.Workflow) error {
+	_, err := api.db.Exec("REPLACE INTO workflows (config_hash, id, text) VALUES ($1, $2, $3)",
+		hash, workflow.ID, workflow.String(),
 	)
 	return err
 }
 
-func (api *API) StartWorkflow(id string, workflowInput map[string]interface{}) error {
+func (api *API) StartWorkflow(hash, id string, workflowInput map[string]interface{}) error {
 	// Create a workflow run
 	workflowRunID, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
-	_, err = api.db.Exec(`INSERT INTO workflow_runs (id, workflow_id, started_at)
-	VALUES ($1, $2, datetime('now'))`, workflowRunID.String(), id)
+	_, err = api.db.Exec(`INSERT INTO workflow_runs (id, config_hash, workflow_id, started_at)
+	VALUES ($1, $2, $3, datetime('now'))`, workflowRunID.String(), hash, id)
 	if err != nil {
 		return err
 	}
 
-	workflow, err := api.GetWorkflow(id)
+	workflow, err := api.GetWorkflow(hash, id)
 	if err != nil {
 		return err
 	}
@@ -41,9 +41,9 @@ func (api *API) CompleteWorkflowRun(id string, success bool) error {
 	return err
 }
 
-func (api *API) GetWorkflow(id string) (*config.Workflow, error) {
+func (api *API) GetWorkflow(hash, id string) (*config.Workflow, error) {
 	var workflowText []byte
-	err := api.db.QueryRow(`select text from workflows where id = $1`, id).Scan(&workflowText)
+	err := api.db.QueryRow(`select text from workflows where config_hash = $1 AND id = $2`, hash, id).Scan(&workflowText)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +55,8 @@ func (api *API) GetWorkflow(id string) (*config.Workflow, error) {
 	return workflow, nil
 }
 
-func (api *API) GetWorkflows() (map[string]config.Workflow, error) {
-	rows, err := api.db.Query("SELECT text FROM workflows")
+func (api *API) GetWorkflows(hash string) (map[string]config.Workflow, error) {
+	rows, err := api.db.Query("SELECT text FROM workflows WHERE config_hash = $1", hash)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (api *API) GetWorkflows() (map[string]config.Workflow, error) {
 func (api *API) GetWorkflowFromWorkflowRunID(workflowRunID string) (*config.Workflow, error) {
 	var workflowText []byte
 	var workflowID string
-	err := api.db.QueryRow(`select workflows.id, text from workflows join workflow_runs on workflow_runs.workflow_id = workflows.id where workflow_runs.id = $1`,
+	err := api.db.QueryRow(`select workflows.id, text from workflows join workflow_runs on (workflow_runs.config_hash, workflow_runs.workflow_id) = (workflows.config_hash, workflows.id) where workflow_runs.id = $1`,
 		workflowRunID).
 		Scan(&workflowID, &workflowText)
 	if err != nil {

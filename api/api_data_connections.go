@@ -5,7 +5,14 @@ import (
 )
 
 func (api *API) getDataConnections(_ http.ResponseWriter, r *http.Request) Response {
-	rows, err := api.db.Query("SELECT id, type, path, connection_string FROM data_connections")
+	hash, err := api.LatestConfigHash()
+	if err != nil {
+		return Response{
+			Status: http.StatusInternalServerError,
+			Error:  err.Error(),
+		}
+	}
+	rows, err := api.db.Query("SELECT id, type, path, connection_string FROM data_connections WHERE config_hash = $1", hash)
 	if err != nil {
 		return Response{
 			Status: http.StatusInternalServerError,

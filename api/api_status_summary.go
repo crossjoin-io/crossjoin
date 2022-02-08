@@ -7,6 +7,14 @@ import (
 )
 
 func (api *API) getStatusSummary(_ http.ResponseWriter, r *http.Request) Response {
+	hash, err := api.LatestConfigHash()
+	if err != nil {
+		return Response{
+			Status: http.StatusInternalServerError,
+			Error:  err.Error(),
+		}
+	}
+
 	var (
 		totalConnections    int
 		totalDatasets       int
@@ -14,13 +22,13 @@ func (api *API) getStatusSummary(_ http.ResponseWriter, r *http.Request) Respons
 		totalTasksCompleted int
 	)
 
-	err := api.db.QueryRow(`
+	err = api.db.QueryRow(`
 	SELECT
-		(SELECT COUNT(*) FROM data_connections) AS total_connections,
-		(SELECT COUNT(*) FROM datasets) AS total_datasets,
-		(SELECT COUNT(*) FROM workflows) AS total_workflows,
+		(SELECT COUNT(*) FROM data_connections WHERE config_hash = $1) AS total_connections,
+		(SELECT COUNT(*) FROM datasets WHERE config_hash = $1) AS total_datasets,
+		(SELECT COUNT(*) FROM workflows WHERE config_hash = $1) AS total_workflows,
 		(SELECT COUNT(*) FROM tasks WHERE completed_at IS NOT NULL) AS total_tasks_completed
-	`).Scan(&totalConnections, &totalDatasets, &totalWorkflows, &totalTasksCompleted)
+	`, hash).Scan(&totalConnections, &totalDatasets, &totalWorkflows, &totalTasksCompleted)
 	if err != nil {
 		log.Println(fmt.Errorf("query summary counts: %w", err))
 		return Response{

@@ -1,49 +1,68 @@
 package api
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/crossjoin-io/crossjoin/config"
 	_ "github.com/lib/pq"
 	"gopkg.in/yaml.v2"
 )
 
-func (api *API) StoreDataset(dataset config.Dataset) error {
+func (api *API) StoreDataset(hash string, dataset config.Dataset) error {
 	marshaledDatset, err := yaml.Marshal(dataset)
 	if err != nil {
 		return err
 	}
-	_, err = api.db.Exec("REPLACE INTO datasets (id, text) VALUES ($1, $2)",
-		dataset.ID, marshaledDatset,
+	_, err = api.db.Exec("REPLACE INTO datasets (config_hash, id, text) VALUES ($1, $2, $3)",
+		hash, dataset.ID, marshaledDatset,
 	)
 	if err != nil {
 		return err
 	}
-	if dataset.Refresh != nil {
-		dur, err := time.ParseDuration(dataset.Refresh.Interval)
-		if err != nil {
-			return fmt.Errorf("parse refresh interval: %w", err)
-		}
-		ticker := time.NewTicker(dur)
-		go func() {
-			for range ticker.C {
-				log.Println("refreshing", dataset.ID)
-				api.refreshDataset(dataset.ID)
-			}
-		}()
-	}
-	err = api.refreshDataset(dataset.ID)
 	return err
+}
+
+func (api *API) ReadDatasets() ([]config.Dataset, error) {
+	hash, err := api.LatestConfigHash()
+	if err != nil {
+		return nil, fmt.Errorf("read latest config hash: %w", err)
+	}
+
+	rows, err := api.db.Query("SELECT id, text FROM datasets WHERE config_hash = $1", hash)
+	if err != nil {
+		return nil, fmt.Errorf("query datasets: %w", err)
+	}
+	defer rows.Close()
+
+	datasets := []config.Dataset{}
+	for rows.Next() {
+		id := ""
+		text := ""
+		dataset := config.Dataset{}
+		err = rows.Scan(&id, &text)
+		if err != nil {
+			return nil, fmt.Errorf("scan dataset: %w", err)
+		}
+		err = yaml.Unmarshal([]byte(text), &dataset)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshal datasets: %w", err)
+		}
+		dataset.ID = id
+		datasets = append(datasets, dataset)
+	}
+	return datasets, nil
 }
 
 func (api *API) PreviewDataset(id string) ([]interface{}, error) {
@@ -85,9 +104,9 @@ func (api *API) PreviewDataset(id string) ([]interface{}, error) {
 	return result, nil
 }
 
-func (api *API) refreshDataset(id string) error {
+func (api *API) refreshDataset(hash string, id string) error {
 	text := ""
-	err := api.db.QueryRow("SELECT text FROM datasets WHERE id = $1", id).Scan(&text)
+	err := api.db.QueryRow("SELECT text FROM datasets WHERE config_hash = $1 AND id = $2", hash, id).Scan(&text)
 	if err != nil {
 		return err
 	}
@@ -96,11 +115,11 @@ func (api *API) refreshDataset(id string) error {
 	if err != nil {
 		return err
 	}
-	err = api.createDataset(dataset)
+	err = api.createDataset(hash, dataset)
 	if err != nil {
 		return fmt.Errorf("create dataset: %w", err)
 	}
-	workflows, err := api.GetWorkflows()
+	workflows, err := api.GetWorkflows(hash)
 	if err != nil {
 		return fmt.Errorf("get workflows: %w", err)
 	}
@@ -111,7 +130,7 @@ func (api *API) refreshDataset(id string) error {
 		}
 		for _, datasetID := range workflow.On.DatasetRefresh {
 			if datasetID == id {
-				err = api.StartWorkflow(workflow.ID, nil)
+				err = api.StartWorkflow(hash, workflow.ID, nil)
 				if err != nil {
 					return fmt.Errorf("start workflow: %w", err)
 				}
@@ -121,7 +140,7 @@ func (api *API) refreshDataset(id string) error {
 	return nil
 }
 
-func (api *API) createDataset(dataset config.Dataset) error {
+func (api *API) createDataset(hash string, dataset config.Dataset) error {
 	filename := filepath.Join(api.dataDir, dataset.ID+".db")
 
 	// Does the file exist? If so, remove it.
@@ -150,14 +169,14 @@ func (api *API) createDataset(dataset config.Dataset) error {
 	}
 
 	log.Printf("querying `%s`", dataset.DataSource.ID)
-	err = api.fetchSingle(db, dataset.DataSource)
+	err = api.fetchSingle(hash, db, dataset.DataSource)
 	if err != nil {
 		return fmt.Errorf("fetch single: %w", err)
 	}
 
 	for _, join := range dataset.Joins {
 		log.Printf("querying `%s`", join.DataSource.ID)
-		err = api.fetchSingle(db, join.DataSource)
+		err = api.fetchSingle(hash, db, join.DataSource)
 		if err != nil {
 			return fmt.Errorf("fetch single as part of join: %w", err)
 		}
@@ -178,18 +197,17 @@ func (api *API) createDataset(dataset config.Dataset) error {
 	return err
 }
 
-func (api *API) fetchSingle(dest *sql.DB, dataSource *config.DataSource) error {
-	dataConnection, err := api.ReadDataConnection(dataSource.DataConnection)
+func (api *API) fetchSingle(hash string, dest *sql.DB, dataSource *config.DataSource) error {
+	dataConnection, err := api.ReadDataConnection(hash, dataSource.DataConnection)
 	if err != nil {
 		return err
 	}
 	switch dataConnection.Type {
 	case "csv":
-		f, err := os.Open(dataConnection.Path)
+		f, err := api.readFile(dataConnection.Path)
 		if err != nil {
 			return err
 		}
-		defer f.Close()
 		r := csv.NewReader(f)
 		firstLine, err := r.Read()
 		if err != nil {
@@ -297,4 +315,24 @@ func (api *API) fetchSingle(dest *sql.DB, dataSource *config.DataSource) error {
 	}
 
 	return nil
+}
+
+func (api *API) readFile(path string) (io.Reader, error) {
+	log.Printf("reading file `%s`", path)
+	urlPath, _ := url.Parse(path)
+	if urlPath != nil {
+		if strings.Contains(path, "api.github.com") {
+			contents, err := api.fetchGitHubFile(path)
+			if err != nil {
+				return nil, fmt.Errorf("read file: %w", err)
+			}
+			return bytes.NewReader(contents), nil
+		}
+		return nil, fmt.Errorf("unsupported path: %s", path)
+	}
+	contents, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+	return bytes.NewReader(contents), nil
 }

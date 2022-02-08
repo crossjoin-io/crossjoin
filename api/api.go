@@ -3,23 +3,29 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
-	"github.com/crossjoin-io/crossjoin/config"
 	"github.com/crossjoin-io/crossjoin/ui/public"
 	"github.com/gorilla/mux"
 )
 
 type API struct {
-	db      *sql.DB
-	router  *mux.Router
-	dataDir string
+	db           *sql.DB
+	router       *mux.Router
+	dataDir      string
+	configSource string
+	configPath   string
+
+	lastRefresh sync.Map // map[string]time.Time
 }
 
 // NewAPI returns a new API instance.
-func NewAPI(db *sql.DB, conf *config.Config, dataDir string) (*API, error) {
+func NewAPI(db *sql.DB, configSource, configPath string, dataDir string) (*API, error) {
 	r := mux.NewRouter()
 
 	err := setupDatabase(db)
@@ -28,30 +34,26 @@ func NewAPI(db *sql.DB, conf *config.Config, dataDir string) (*API, error) {
 	}
 
 	api := &API{
-		db:      db,
-		router:  r,
-		dataDir: dataDir,
+		db:           db,
+		router:       r,
+		dataDir:      dataDir,
+		configSource: configSource,
+		configPath:   configPath,
 	}
 
-	// Load the initial config
-	for _, workflow := range conf.Workflows {
-		err = api.StoreWorkflow(workflow)
-		if err != nil {
-			return nil, err
-		}
+	err = api.LoadConfig()
+	if err != nil {
+		return nil, fmt.Errorf("load config: %w", err)
 	}
-	for _, connection := range conf.DataConnections {
-		err = api.StoreDataConnection(connection)
-		if err != nil {
-			return nil, err
+
+	go func() {
+		for now := range time.Tick(5 * time.Second) {
+			err = api.Tick(now)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
-	}
-	for _, dataset := range conf.Datasets {
-		err = api.StoreDataset(dataset)
-		if err != nil {
-			return nil, err
-		}
-	}
+	}()
 
 	return api, nil
 }
@@ -60,7 +62,7 @@ func (api *API) Handler() http.Handler {
 	baseMux := http.NewServeMux()
 	baseMux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			http.Redirect(w, r, "/app", 301)
+			http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 		}
 		if strings.HasPrefix(r.URL.Path, "/app") {
 			r.URL.Path = "/"
@@ -76,6 +78,7 @@ func (api *API) Handler() http.Handler {
 	api.handle("GET", "/api/tasks/poll", api.getTasksPoll)
 	api.handle("POST", "/api/tasks/result", api.postTasksResult)
 
+	api.handle("POST", "/api/config/reload", api.postConfigReload)
 	api.handle("GET", "/api/data_connections", api.getDataConnections)
 	api.handle("GET", "/api/datasets", api.getDatasets)
 	api.handle("GET", "/api/datasets/{dataset_name}/preview", api.getDatasetPreview)

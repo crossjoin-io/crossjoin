@@ -10,8 +10,25 @@ func setupDatabase(db *sql.DB) error {
 	migrations := []string{
 		/* 000 */ `CREATE TABLE IF NOT EXISTS schema_version (version INT PRIMARY KEY, timestamp TIMESTAMP)`,
 		/* 001 */ `
-		CREATE TABLE IF NOT EXISTS workflows (id TEXT NOT NULL PRIMARY KEY, text TEXT NOT NULL);
-		CREATE TABLE IF NOT EXISTS workflow_runs (id TEXT NOT NULL PRIMARY KEY, workflow_id TEXT NOT NULL, started_at TIMESTAMP, completed_at TIMESTAMP, success BOOL);
+		CREATE TABLE IF NOT EXISTS configs (
+			loaded_at TIMESTAMP NOT NULL,
+			hash TEXT NOT NULL,
+			config JSON NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS workflows (
+			config_hash TEXT NOT NULL,
+			id TEXT NOT NULL,
+			text TEXT NOT NULL,
+			PRIMARY KEY (config_hash, id)
+		);
+		CREATE TABLE IF NOT EXISTS workflow_runs (
+			id TEXT NOT NULL PRIMARY KEY,
+			config_hash TEXT NOT NULL,
+			workflow_id TEXT NOT NULL,
+			started_at TIMESTAMP,
+			completed_at TIMESTAMP,
+			success BOOL
+		);
 		CREATE TABLE tasks (
 			id TEXT NOT NULL PRIMARY KEY,
 			workflow_run_id TEXT NOT NULL,
@@ -28,14 +45,18 @@ func setupDatabase(db *sql.DB) error {
 			success BOOL
 		);
 		CREATE TABLE IF NOT EXISTS data_connections (
-			id TEXT NOT NULL PRIMARY KEY,
+			config_hash TEXT NOT NULL,
+			id TEXT NOT NULL,
 			type TEXT NOT NULL,
 			path TEXT,
-			connection_string TEXT
+			connection_string TEXT,
+			PRIMARY KEY (config_hash, id)
 		);
 		CREATE TABLE IF NOT EXISTS datasets (
-			id TEXT NOT NULL PRIMARY KEY,
-			text TEXT NOT NULL
+			config_hash TEXT NOT NULL,
+			id TEXT NOT NULL,
+			text TEXT NOT NULL,
+			PRIMARY KEY (config_hash, id)
 		)
 		`,
 	}

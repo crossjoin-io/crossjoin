@@ -11,7 +11,7 @@ func (api *API) getWorkflowRuns(_ http.ResponseWriter, r *http.Request) Response
 	vars := mux.Vars(r)
 	workflowID := vars["workflow_id"]
 
-	rows, err := api.db.Query("SELECT id, started_at, completed_at, success FROM workflow_runs WHERE workflow_id = $1",
+	rows, err := api.db.Query("SELECT id, config_hash, started_at, completed_at, success FROM workflow_runs WHERE workflow_id = $1",
 		workflowID)
 	if err != nil {
 		log.Println(err)
@@ -26,7 +26,7 @@ func (api *API) getWorkflowRuns(_ http.ResponseWriter, r *http.Request) Response
 		run := WorkflowRun{
 			WorkflowID: workflowID,
 		}
-		err = rows.Scan(&run.ID, &run.StartedAt, &run.CompletedAt, &run.Success)
+		err = rows.Scan(&run.ID, &run.ConfigHash, &run.StartedAt, &run.CompletedAt, &run.Success)
 		if err != nil {
 			log.Println(err)
 			return Response{

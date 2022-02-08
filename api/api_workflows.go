@@ -8,7 +8,15 @@ import (
 )
 
 func (api *API) getWorkflows(_ http.ResponseWriter, r *http.Request) Response {
-	rows, err := api.db.Query("SELECT id, text FROM workflows")
+	hash, err := api.LatestConfigHash()
+	if err != nil {
+		return Response{
+			Status: http.StatusInternalServerError,
+			Error:  err.Error(),
+		}
+	}
+
+	rows, err := api.db.Query("SELECT id, text FROM workflows WHERE config_hash = $1", hash)
 	if err != nil {
 		return Response{
 			Status: http.StatusInternalServerError,

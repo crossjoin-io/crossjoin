@@ -31,7 +31,6 @@ export function Connections() {
     return html`Error: ${error}`;
   }
 
-  let connectionElems = [];
   let connectionCards = [];
   for (i in connections) {
     let icon = "plug";

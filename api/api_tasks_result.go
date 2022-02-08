@@ -51,8 +51,9 @@ func (api *API) postTasksResult(_ http.ResponseWriter, r *http.Request) Response
 			Error:  err.Error(),
 		}
 	}
+	hash := ""
 	workflowID := ""
-	err = api.db.QueryRow("select workflow_id from workflow_runs where id = $1", workflowRunID).Scan(&workflowID)
+	err = api.db.QueryRow("select config_hash, workflow_id from workflow_runs where id = $1", workflowRunID).Scan(&hash, &workflowID)
 	if err != nil {
 		log.Println(err)
 		return Response{
@@ -78,7 +79,7 @@ func (api *API) postTasksResult(_ http.ResponseWriter, r *http.Request) Response
 		}
 	}
 
-	workflow, err := api.GetWorkflow(workflowID)
+	workflow, err := api.GetWorkflow(hash, workflowID)
 	if err != nil {
 		log.Println(err)
 		return Response{

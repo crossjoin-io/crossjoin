@@ -1,9 +1,13 @@
 package config
 
 import (
+	"crypto/sha1"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -91,11 +95,19 @@ func (c *Config) Parse(content []byte, dir string) error {
 		return err
 	}
 
+	urlDir, _ := url.Parse(dir)
+
 	for i, dataConnection := range c.DataConnections {
 		dataConnection.ExpandConnectionString()
 		if dataConnection.Path != "" {
-			if !filepath.IsAbs(dataConnection.Path) {
-				c.DataConnections[i].Path = filepath.Join(dir, dataConnection.Path)
+			if !path.IsAbs(dataConnection.Path) {
+				if urlDir != nil {
+					urlPath := *urlDir
+					urlPath.Path = path.Join(urlPath.Path, dataConnection.Path)
+					c.DataConnections[i].Path = urlPath.String()
+				} else {
+					c.DataConnections[i].Path = filepath.Join(dir, dataConnection.Path)
+				}
 			}
 		}
 	}
@@ -106,6 +118,16 @@ func (c *Config) Parse(content []byte, dir string) error {
 func (c *Config) String() string {
 	b, _ := yaml.Marshal(c)
 	return string(b)
+}
+
+func (c *Config) JSON() []byte {
+	b, _ := json.Marshal(c)
+	return b
+}
+
+func (c *Config) Hash() string {
+	hash := sha1.Sum(c.JSON())
+	return fmt.Sprintf("%x", hash)
 }
 
 func (w Workflow) String() string {

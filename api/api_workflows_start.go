@@ -14,7 +14,17 @@ func (api *API) postWorkflowsStart(_ http.ResponseWriter, r *http.Request) Respo
 
 	var workflowInput map[string]interface{}
 	json.NewDecoder(r.Body).Decode(&workflowInput)
-	err := api.StartWorkflow(workflowID, workflowInput)
+
+	latestHash, err := api.LatestConfigHash()
+	if err != nil {
+		log.Println(err)
+		return Response{
+			OK:     false,
+			Status: http.StatusInternalServerError,
+		}
+	}
+
+	err = api.StartWorkflow(latestHash, workflowID, workflowInput)
 	if err != nil {
 		log.Println(err)
 		return Response{

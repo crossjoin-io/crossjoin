@@ -2,7 +2,6 @@ package server
 
 import (
 	"database/sql"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -10,7 +9,6 @@ import (
 	"time"
 
 	"github.com/crossjoin-io/crossjoin/api"
-	"github.com/crossjoin-io/crossjoin/config"
 	"github.com/crossjoin-io/crossjoin/runner"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -23,7 +21,7 @@ type Server struct {
 }
 
 // NewServer creates a server instance.
-func NewServer(listenAddress, dataDir, configFile string, runner bool) (*Server, error) {
+func NewServer(listenAddress, dataDir, configSource, configPath string, runner bool) (*Server, error) {
 	log.Println("using data directory", dataDir)
 	err := os.MkdirAll(dataDir, 0755)
 	if err != nil {
@@ -41,25 +39,7 @@ func NewServer(listenAddress, dataDir, configFile string, runner bool) (*Server,
 		return nil, err
 	}
 
-	conf := &config.Config{}
-	if configFile != "" {
-		log.Println("using config file", configFile)
-
-		configFileContent, err := ioutil.ReadFile(configFile)
-		if err != nil {
-			return nil, err
-		}
-		absPath, err := filepath.Abs(configFile)
-		if err != nil {
-			return nil, err
-		}
-		err = conf.Parse(configFileContent, filepath.Dir(absPath))
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	api, err := api.NewAPI(db, conf, dataDir)
+	api, err := api.NewAPI(db, configSource, configPath, dataDir)
 	if err != nil {
 		return nil, err
 	}

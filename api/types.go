@@ -24,6 +24,7 @@ type TaskResult struct {
 
 type WorkflowRun struct {
 	ID          string     `json:"id"`
+	ConfigHash  string     `json:"config_hash"`
 	WorkflowID  string     `json:"workflow_id"`
 	StartedAt   *time.Time `json:"started_at"`
 	CompletedAt *time.Time `json:"completed_at"`

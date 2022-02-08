@@ -9,10 +9,11 @@ import (
 )
 
 var (
-	listenAddr  string
-	dataDir     string
-	config      string
-	startRunner bool
+	listenAddr   string
+	dataDir      string
+	configSource string
+	config       string
+	startRunner  bool
 )
 
 // serverCmd represents the runner command
@@ -20,7 +21,7 @@ var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "start a crossjoin server",
 	Run: func(cmd *cobra.Command, args []string) {
-		s, err := server.NewServer(listenAddr, dataDir, config, startRunner)
+		s, err := server.NewServer(listenAddr, dataDir, configSource, config, startRunner)
 		if err != nil {
 			cmd.PrintErrln(err)
 			os.Exit(1)
@@ -41,6 +42,7 @@ func init() {
 		homeDir = "."
 	}
 	serverCmd.Flags().StringVar(&dataDir, "data-dir", filepath.Join(homeDir, ".crossjoin"), "data directory")
-	serverCmd.Flags().StringVar(&config, "config", "", "config file to load")
+	serverCmd.Flags().StringVar(&config, "config", "", "config location to load")
+	serverCmd.Flags().StringVar(&configSource, "config-source", "file", "config source type (e.g. `file`, `http`, `github`)")
 	serverCmd.Flags().BoolVar(&startRunner, "runner", false, "start a runner")
 }
