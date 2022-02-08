@@ -6,7 +6,7 @@ on:
       - main
       - dev
     tags:
-      - *
+      - v*
   workflow_dispatch:
 
 env:
