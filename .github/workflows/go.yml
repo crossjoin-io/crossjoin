@@ -2,6 +2,7 @@ name: CLI
 
 on:
   - push
+  - workflow_dispatch
 
 jobs:
   test_and_build:
